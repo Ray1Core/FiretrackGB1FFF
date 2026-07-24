@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Firetrack.Views.LoginPage"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="{StaticResource PrimaryColor}">
+
+    <Grid Padding="30" VerticalOptions="Center">
+        <VerticalStackLayout Spacing="20">
+
+            <!-- Brand -->
+            <Label Text="🔥 Fire Track"
+                   FontSize="48"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center" />
+
+            <Label Text="QR Inventory &amp; Asset Accountability"
+                   FontSize="16"
+                   TextColor="#E0E0E0"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,30" />
+
+            <!-- Username -->
+            <Entry Style="{StaticResource EntryStyle}"
+                   Placeholder="Username"
+                   Text="{Binding Username}"
+                   TextColor="White"
+                   PlaceholderColor="#CCCCCC"
+                   BackgroundColor="#33FFFFFF" />
+
+            <!-- Password -->
+            <Entry Style="{StaticResource EntryStyle}"
+                   Placeholder="Password"
+                   Text="{Binding Password}"
+                   IsPassword="True"
+                   TextColor="White"
+                   PlaceholderColor="#CCCCCC"
+                   BackgroundColor="#33FFFFFF" />
+
+            <!-- Error message -->
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="{Binding ErrorMessage, Converter={StaticResource StringToColorConverter}}"
+                   FontSize="14"
+                   HorizontalOptions="Center" />
+
+            <!-- Login button -->
+            <Button Text="LOGIN"
+                    Command="{Binding LoginCommand}"
+                    BackgroundColor="#EEC6E6"
+                    TextColor="#333333"
+                    CornerRadius="20"
+                    HeightRequest="50"
+                    FontAttributes="Bold"
+                    FontSize="16" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               Color="White"
+                               HorizontalOptions="Center" />
+
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

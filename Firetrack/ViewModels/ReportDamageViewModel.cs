@@ -1,0 +1,172 @@
+﻿using Firetrack.Models;
+using Firetrack.Services;
+using System.Windows.Input;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace Firetrack.ViewModels
+{
+    public class ReportDamageViewModel : ViewModelBase
+    {
+        private readonly DatabaseService _db;
+        private EquipmentModel? _equipment;
+        private string _remarks = string.Empty;
+        private string _photoPath = string.Empty;
+        private ImageSource? _photoPreview;
+        private bool _isBusy;
+        private string _statusMessage = string.Empty;
+
+        public EquipmentModel Equipment
+        {
+            get => _equipment!;
+            set { _equipment = value; OnPropertyChanged(); }
+        }
+
+        public string Remarks
+        {
+            get => _remarks;
+            set { _remarks = value; OnPropertyChanged(); }
+        }
+
+        public string PhotoPath
+        {
+            get => _photoPath;
+            set { _photoPath = value; OnPropertyChanged(); }
+        }
+
+        public ImageSource? PhotoPreview
+        {
+            get => _photoPreview;
+            set { _photoPreview = value; OnPropertyChanged(); }
+        }
+
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set { _isBusy = value; OnPropertyChanged(); }
+        }
+
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set { _statusMessage = value; OnPropertyChanged(); }
+        }
+
+        public ICommand PickPhotoCommand { get; }
+        public ICommand SubmitReportCommand { get; }
+        public ICommand GoBackCommand { get; }
+
+        public ReportDamageViewModel(EquipmentModel equipment)
+        {
+            _db = App.Database!;
+            Equipment = equipment;
+
+            PickPhotoCommand = new Command(OnPickPhoto);
+            SubmitReportCommand = new Command(OnSubmitReport);
+            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
+        }
+
+        private async void OnPickPhoto()
+        {
+            try
+            {
+                var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
+                {
+                    Title = "Pick a photo of the damaged equipment"
+                });
+
+                if (photo == null)
+                    return;
+
+                IsBusy = true;
+
+                var localPath = await SavePhotoAsync(photo);
+                if (!string.IsNullOrEmpty(localPath))
+                {
+                    PhotoPath = localPath;
+                    PhotoPreview = ImageSource.FromFile(localPath);
+                    StatusMessage = "Photo selected successfully.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error picking photo: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task<string> SavePhotoAsync(FileResult photo)
+        {
+            var fileName = $"damage_{Equipment.QRCode}_{DateTime.Now:yyyyMMddHHmmss}.jpg";
+            var appDataDir = FileSystem.AppDataDirectory;
+            var savePath = Path.Combine(appDataDir, "DamagePhotos");
+
+            if (!Directory.Exists(savePath))
+                Directory.CreateDirectory(savePath);
+
+            var fullPath = Path.Combine(savePath, fileName);
+
+            using var stream = await photo.OpenReadAsync();
+            using var fileStream = File.Create(fullPath);
+            await stream.CopyToAsync(fileStream);
+
+            return fullPath;
+        }
+
+        private async void OnSubmitReport()
+        {
+            if (string.IsNullOrWhiteSpace(PhotoPath))
+            {
+                StatusMessage = "Please take or select a photo of the damage.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Remarks))
+            {
+                StatusMessage = "Please add remarks describing the damage.";
+                return;
+            }
+
+            IsBusy = true;
+            StatusMessage = string.Empty;
+
+            try
+            {
+                Equipment.Status = "Damaged";
+                Equipment.PhotoPath = PhotoPath;
+                Equipment.Remarks = Remarks;
+                Equipment.LastUpdated = DateTime.Now;
+
+                var transaction = new TransactionModel
+                {
+                    EquipmentQR = Equipment.QRCode,
+                    FromUser = App.CurrentUser?.Username ?? "unknown",
+                    ToUser = Equipment.AssignedToUsername ?? "none",
+                    Timestamp = DateTime.Now,
+                    Action = "ReportDamage",
+                    Remarks = Remarks
+                };
+
+                await _db.SaveEquipmentAsync(Equipment);
+                await _db.SaveTransactionAsync(transaction);
+
+                StatusMessage = "✅ Damage report submitted successfully!";
+                await Task.Delay(2000);
+                await Shell.Current.GoToAsync("..");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error submitting report: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+    }
+}
