@@ -1,5 +1,5 @@
 ﻿using System.Data;
-using Microsoft.Data.SqlClient;   // <-- use Microsoft.Data.SqlClient
+using Microsoft.Data.SqlClient;
 using Dapper;
 using Firetrack.Models;
 
@@ -20,7 +20,59 @@ namespace Firetrack.Services
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
 
-            // Seed admin
+            // ===== CREATE TABLES IF MISSING =====
+            // Users
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
+                CREATE TABLE Users (
+                    UserId INT IDENTITY(1,1) PRIMARY KEY,
+                    Username NVARCHAR(50) UNIQUE NOT NULL,
+                    Password NVARCHAR(100) NOT NULL,
+                    FullName NVARCHAR(100) NOT NULL,
+                    Role NVARCHAR(20) NOT NULL DEFAULT 'Personnel'
+                )");
+
+            // Equipment
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Equipment' AND xtype='U')
+                CREATE TABLE Equipment (
+                    EquipmentId INT IDENTITY(1,1) PRIMARY KEY,
+                    QRCode NVARCHAR(50) UNIQUE NOT NULL,
+                    Name NVARCHAR(100) NOT NULL,
+                    Type NVARCHAR(50) NOT NULL,
+                    Status NVARCHAR(20) NOT NULL DEFAULT 'Available',
+                    AssignedToUsername NVARCHAR(50) NULL,
+                    PhotoPath NVARCHAR(500) NULL,
+                    Remarks NVARCHAR(500) NULL,
+                    LastUpdated DATETIME NULL
+                )");
+
+            // Transactions
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Transactions' AND xtype='U')
+                CREATE TABLE Transactions (
+                    TransactionId INT IDENTITY(1,1) PRIMARY KEY,
+                    EquipmentQR NVARCHAR(50) NOT NULL,
+                    FromUser NVARCHAR(50) NOT NULL,
+                    ToUser NVARCHAR(50) NOT NULL,
+                    Timestamp DATETIME NOT NULL DEFAULT GETDATE(),
+                    Action NVARCHAR(50) NOT NULL,
+                    Remarks NVARCHAR(500) NULL
+                )");
+
+            // Notifications
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Notifications' AND xtype='U')
+                CREATE TABLE Notifications (
+                    NotificationId INT IDENTITY(1,1) PRIMARY KEY,
+                    Username NVARCHAR(50) NOT NULL,
+                    Title NVARCHAR(100) NOT NULL,
+                    Message NVARCHAR(500) NOT NULL,
+                    IsRead BIT NOT NULL DEFAULT 0,
+                    Timestamp DATETIME NOT NULL DEFAULT GETDATE()
+                )");
+
+            // ===== SEED USERS =====
             var admin = connection.QueryFirstOrDefault<UserModel>(
                 "SELECT * FROM Users WHERE Username = @Username", new { Username = "admin" });
             if (admin == null)
@@ -30,7 +82,6 @@ namespace Firetrack.Services
                     new { Username = "admin", Password = "admin123", FullName = "Admin Chief", Role = "Admin" });
             }
 
-            // Seed user
             var user = connection.QueryFirstOrDefault<UserModel>(
                 "SELECT * FROM Users WHERE Username = @Username", new { Username = "user" });
             if (user == null)
@@ -40,16 +91,32 @@ namespace Firetrack.Services
                     new { Username = "user", Password = "user123", FullName = "John Firefighter", Role = "Personnel" });
             }
 
-            // Seed equipment if empty
+            // ===== SEED EQUIPMENT =====
             var count = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Equipment");
             if (count == 0)
             {
-                connection.Execute(
-                    "INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, LastUpdated) VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @LastUpdated)",
-                    new { QRCode = "HOSE001", Name = "Fire Hose 1", Type = "Hose", Status = "Available", AssignedToUsername = (string?)null, LastUpdated = DateTime.Now });
-                connection.Execute(
-                    "INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, LastUpdated) VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @LastUpdated)",
-                    new { QRCode = "NOZZLE001", Name = "High Pressure Nozzle", Type = "Nozzle", Status = "Issued", AssignedToUsername = "user", LastUpdated = DateTime.Now });
+                var items = new List<EquipmentModel>
+                {
+                    new EquipmentModel { QRCode = "HOSE001", Name = "Fire Hose 1.5\" x 15m", Type = "Hose", Status = "Available" },
+                    new EquipmentModel { QRCode = "HOSE002", Name = "Fire Hose 2.5\" x 15m", Type = "Hose", Status = "Available" },
+                    new EquipmentModel { QRCode = "HOSE003", Name = "Fire Hose 2.5\" x 30m", Type = "Hose", Status = "Issued", AssignedToUsername = "user" },
+                    new EquipmentModel { QRCode = "NOZZLE001", Name = "Combination Nozzle", Type = "Nozzle", Status = "Available" },
+                    new EquipmentModel { QRCode = "NOZZLE002", Name = "Fog Nozzle", Type = "Nozzle", Status = "Available" },
+                    new EquipmentModel { QRCode = "TOOL001", Name = "Halligan Tool", Type = "Rescue Tool", Status = "Available" },
+                    new EquipmentModel { QRCode = "TOOL002", Name = "Flathead Axe", Type = "Rescue Tool", Status = "Available" },
+                    new EquipmentModel { QRCode = "TOOL003", Name = "Pry Bar", Type = "Rescue Tool", Status = "Issued", AssignedToUsername = "user" },
+                    new EquipmentModel { QRCode = "TOOL004", Name = "Bolt Cutter", Type = "Rescue Tool", Status = "Available" },
+                    new EquipmentModel { QRCode = "TOOL005", Name = "Search & Rescue Rope", Type = "Rescue Tool", Status = "Available" }
+                };
+
+                foreach (var eq in items)
+                {
+                    eq.LastUpdated = DateTime.Now;
+                    connection.Execute(
+                        @"INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, LastUpdated)
+                          VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @LastUpdated)",
+                        eq);
+                }
             }
         }
 
@@ -154,8 +221,8 @@ namespace Firetrack.Services
         {
             using var connection = new SqlConnection(_connectionString);
             string sql = @"INSERT INTO Notifications (Username, Title, Message, IsRead, Timestamp)
-                    VALUES (@Username, @Title, @Message, @IsRead, @Timestamp);
-                    SELECT CAST(SCOPE_IDENTITY() as int);";
+                            VALUES (@Username, @Title, @Message, @IsRead, @Timestamp);
+                            SELECT CAST(SCOPE_IDENTITY() as int);";
             return await connection.ExecuteScalarAsync<int>(sql, notification);
         }
 
