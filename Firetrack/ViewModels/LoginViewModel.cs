@@ -58,31 +58,22 @@ namespace Firetrack.ViewModels
                 IsBusy = true;
                 ErrorMessage = string.Empty;
 
-                // --- DEBUG: print all users ---
-                var allUsers = await db.GetUsersAsync();
-                System.Diagnostics.Debug.WriteLine($"📋 All users in DB ({allUsers.Count}):");
-                foreach (var u in allUsers)
-                {
-                    System.Diagnostics.Debug.WriteLine($"   👤 {u.Username} : {u.Password}");
-                }
-                // --- end debug ---
-
                 var user = await db.GetUserByUsernameAsync(Username);
                 if (user != null && user.Password == Password)
                 {
                     App.CurrentUser = user;
+
+                    // Clear the navigation stack and navigate to Dashboard
                     await Shell.Current.GoToAsync("//DashboardPage");
                 }
                 else
                 {
                     ErrorMessage = "Invalid username or password";
-                    System.Diagnostics.Debug.WriteLine($"❌ Login failed for '{Username}'");
                 }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error: {ex.Message}";
-                System.Diagnostics.Debug.WriteLine($"🚨 Login error: {ex.Message}");
             }
             finally
             {

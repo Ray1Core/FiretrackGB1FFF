@@ -75,6 +75,22 @@ namespace Firetrack.ViewModels
                 MyEquipment.Add(item);
         }
 
+        // ========== ADD THIS METHOD ==========
+        public void RefreshDashboard()
+        {
+            // Update welcome message and role
+            var user = App.CurrentUser;
+            WelcomeMessage = $"Welcome, {user?.FullName ?? "Firefighter"}!";
+            IsAdmin = user?.Role == "Admin";
+            OnPropertyChanged(nameof(WelcomeMessage));
+            OnPropertyChanged(nameof(IsAdmin));
+            OnPropertyChanged(nameof(UserRole));
+
+            // Reload equipment
+            LoadEquipment();
+        }
+        // =====================================
+
         private async void OnReturnEquipment(EquipmentModel? equipment)
         {
             if (equipment == null) return;
@@ -112,16 +128,14 @@ namespace Firetrack.ViewModels
                 await App.Database!.SaveEquipmentAsync(equipment);
                 await App.Database!.SaveTransactionAsync(transaction);
 
-                // ========== SEND NOTIFICATION TO ADMIN ==========
                 await App.Database!.SendNotificationAsync(
                     "admin",
                     "↩️ Equipment Returned",
                     $"{App.CurrentUser?.FullName} returned '{equipment.Name}'."
                 );
-                // ================================================
 
                 await Shell.Current.DisplayAlert("Success", $"'{equipment.Name}' returned successfully.", "OK");
-                LoadEquipment(); // refresh the list
+                LoadEquipment();
             }
             catch (Exception ex)
             {
