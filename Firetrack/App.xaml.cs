@@ -16,24 +16,10 @@ namespace Firetrack
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "firetrack.db3");
-            System.Diagnostics.Debug.WriteLine($"📂 Database path: {dbPath}");
+            // Connection string for local SQL Server (Windows Authentication)
+            string connectionString = @"Server=(localdb)\MSSQLLocalDB;Database=FiretrackDB;Trusted_Connection=True;";
 
-            // Delete old database to force fresh seed
-            if (File.Exists(dbPath))
-            {
-                try
-                {
-                    File.Delete(dbPath);
-                    System.Diagnostics.Debug.WriteLine("🗑️ Old database deleted.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"⚠️ Could not delete: {ex.Message}");
-                }
-            }
-
-            Database = new DatabaseService(dbPath);
+            Database = new DatabaseService(connectionString);
 
             return new Window(new AppShell());
         }

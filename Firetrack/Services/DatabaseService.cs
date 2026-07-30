@@ -1,122 +1,152 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using SQLite;
+﻿using System.Data;
+using Microsoft.Data.SqlClient;   // <-- use Microsoft.Data.SqlClient
+using Dapper;
 using Firetrack.Models;
 
 namespace Firetrack.Services
 {
     public class DatabaseService
     {
-        private readonly SQLiteAsyncConnection _database;
+        private readonly string _connectionString;
 
-        public DatabaseService(string dbPath)
+        public DatabaseService(string connectionString)
         {
-            _database = new SQLiteAsyncConnection(dbPath);
-
-            // Create tables
-            _database.CreateTableAsync<EquipmentModel>().Wait();
-            _database.CreateTableAsync<TransactionModel>().Wait();
-            _database.CreateTableAsync<UserModel>().Wait();
-
-            // Seed data
-            SeedData();
+            _connectionString = connectionString;
+            InitializeDatabase();
         }
 
-        private void SeedData()
+        private void InitializeDatabase()
         {
-            // Force admin user
-            var admin = GetUserByUsernameAsync("admin").Result;
+            using var connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            // Seed admin
+            var admin = connection.QueryFirstOrDefault<UserModel>(
+                "SELECT * FROM Users WHERE Username = @Username", new { Username = "admin" });
             if (admin == null)
             {
-                SaveUserAsync(new UserModel
-                {
-                    Username = "admin",
-                    Password = "admin123",
-                    FullName = "Admin Chief",
-                    Role = "Admin"
-                }).Wait();
-                System.Diagnostics.Debug.WriteLine("✅ Admin created.");
-            }
-            else
-            {
-                // Ensure password is correct
-                if (admin.Password != "admin123")
-                {
-                    admin.Password = "admin123";
-                    SaveUserAsync(admin).Wait();
-                    System.Diagnostics.Debug.WriteLine("✅ Admin password reset.");
-                }
+                connection.Execute(
+                    "INSERT INTO Users (Username, Password, FullName, Role) VALUES (@Username, @Password, @FullName, @Role)",
+                    new { Username = "admin", Password = "admin123", FullName = "Admin Chief", Role = "Admin" });
             }
 
-            // Ensure user
-            var user = GetUserByUsernameAsync("user").Result;
+            // Seed user
+            var user = connection.QueryFirstOrDefault<UserModel>(
+                "SELECT * FROM Users WHERE Username = @Username", new { Username = "user" });
             if (user == null)
             {
-                SaveUserAsync(new UserModel
-                {
-                    Username = "user",
-                    Password = "user123",
-                    FullName = "John Firefighter",
-                    Role = "Personnel"
-                }).Wait();
-                System.Diagnostics.Debug.WriteLine("✅ User created.");
+                connection.Execute(
+                    "INSERT INTO Users (Username, Password, FullName, Role) VALUES (@Username, @Password, @FullName, @Role)",
+                    new { Username = "user", Password = "user123", FullName = "John Firefighter", Role = "Personnel" });
             }
 
             // Seed equipment if empty
-            var equipments = GetEquipmentsAsync().Result;
-            if (equipments.Count == 0)
+            var count = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Equipment");
+            if (count == 0)
             {
-                SaveEquipmentAsync(new EquipmentModel
-                {
-                    QRCode = "HOSE001",
-                    Name = "Fire Hose 1",
-                    Type = "Hose",
-                    Status = "Available",
-                    LastUpdated = DateTime.Now
-                }).Wait();
-                SaveEquipmentAsync(new EquipmentModel
-                {
-                    QRCode = "NOZZLE001",
-                    Name = "High Pressure Nozzle",
-                    Type = "Nozzle",
-                    Status = "Issued",
-                    AssignedToUsername = "user",
-                    LastUpdated = DateTime.Now
-                }).Wait();
-                System.Diagnostics.Debug.WriteLine("✅ Equipment seeded.");
+                connection.Execute(
+                    "INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, LastUpdated) VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @LastUpdated)",
+                    new { QRCode = "HOSE001", Name = "Fire Hose 1", Type = "Hose", Status = "Available", AssignedToUsername = (string?)null, LastUpdated = DateTime.Now });
+                connection.Execute(
+                    "INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, LastUpdated) VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @LastUpdated)",
+                    new { QRCode = "NOZZLE001", Name = "High Pressure Nozzle", Type = "Nozzle", Status = "Issued", AssignedToUsername = "user", LastUpdated = DateTime.Now });
             }
         }
 
-        // ---------- Public methods ----------
-        public Task<List<EquipmentModel>> GetEquipmentsAsync() =>
-            _database.Table<EquipmentModel>().ToListAsync();
+        // ---------- Equipment ----------
+        public async Task<List<EquipmentModel>> GetEquipmentsAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<EquipmentModel>("SELECT * FROM Equipment");
+            return result.ToList();
+        }
 
-        public Task<List<EquipmentModel>> GetEquipmentsAssignedToUserAsync(string username) =>
-            _database.Table<EquipmentModel>().Where(e => e.AssignedToUsername == username).ToListAsync();
+        public async Task<List<EquipmentModel>> GetEquipmentsAssignedToUserAsync(string username)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<EquipmentModel>(
+                "SELECT * FROM Equipment WHERE AssignedToUsername = @Username",
+                new { Username = username });
+            return result.ToList();
+        }
 
-        public Task<int> SaveEquipmentAsync(EquipmentModel equipment) =>
-            _database.InsertOrReplaceAsync(equipment);
+        public async Task<int> SaveEquipmentAsync(EquipmentModel equipment)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                IF EXISTS (SELECT 1 FROM Equipment WHERE EquipmentId = @EquipmentId)
+                    UPDATE Equipment SET QRCode = @QRCode, Name = @Name, Type = @Type, Status = @Status,
+                        AssignedToUsername = @AssignedToUsername, PhotoPath = @PhotoPath, Remarks = @Remarks,
+                        LastUpdated = @LastUpdated
+                    WHERE EquipmentId = @EquipmentId
+                ELSE
+                    INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, PhotoPath, Remarks, LastUpdated)
+                    VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @PhotoPath, @Remarks, @LastUpdated);
+                    SELECT CAST(SCOPE_IDENTITY() as int);";
+            return await connection.ExecuteScalarAsync<int>(sql, equipment);
+        }
 
-        public Task<int> DeleteEquipmentAsync(EquipmentModel equipment) =>
-            _database.DeleteAsync(equipment);
+        public async Task<int> DeleteEquipmentAsync(EquipmentModel equipment)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.ExecuteAsync("DELETE FROM Equipment WHERE EquipmentId = @EquipmentId", equipment);
+        }
 
-        public Task<int> SaveTransactionAsync(TransactionModel transaction) =>
-            _database.InsertAsync(transaction);
+        // ---------- Transactions ----------
+        public async Task<int> SaveTransactionAsync(TransactionModel transaction)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"INSERT INTO Transactions (EquipmentQR, FromUser, ToUser, Timestamp, Action, Remarks)
+                            VALUES (@EquipmentQR, @FromUser, @ToUser, @Timestamp, @Action, @Remarks);
+                            SELECT CAST(SCOPE_IDENTITY() as int);";
+            return await connection.ExecuteScalarAsync<int>(sql, transaction);
+        }
 
-        public Task<List<TransactionModel>> GetTransactionsForEquipmentAsync(string qrCode) =>
-            _database.Table<TransactionModel>().Where(t => t.EquipmentQR == qrCode).ToListAsync();
+        public async Task<List<TransactionModel>> GetTransactionsForEquipmentAsync(string qrCode)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<TransactionModel>(
+                "SELECT * FROM Transactions WHERE EquipmentQR = @QRCode ORDER BY Timestamp DESC",
+                new { QRCode = qrCode });
+            return result.ToList();
+        }
 
-        public Task<UserModel> GetUserByUsernameAsync(string username) =>
-            _database.Table<UserModel>().FirstOrDefaultAsync(u => u.Username == username);
+        // ---------- Users ----------
+        public async Task<UserModel?> GetUserByUsernameAsync(string username)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.QueryFirstOrDefaultAsync<UserModel>(
+                "SELECT * FROM Users WHERE Username = @Username",
+                new { Username = username });
+        }
 
-        public Task<int> SaveUserAsync(UserModel user) =>
-            _database.InsertOrReplaceAsync(user);
+        public async Task<int> SaveUserAsync(UserModel user)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                IF EXISTS (SELECT 1 FROM Users WHERE UserId = @UserId)
+                    UPDATE Users SET Username = @Username, Password = @Password, FullName = @FullName, Role = @Role
+                    WHERE UserId = @UserId
+                ELSE
+                    INSERT INTO Users (Username, Password, FullName, Role)
+                    VALUES (@Username, @Password, @FullName, @Role);
+                    SELECT CAST(SCOPE_IDENTITY() as int);";
+            return await connection.ExecuteScalarAsync<int>(sql, user);
+        }
 
-        public Task<List<UserModel>> GetUsersAsync() =>
-            _database.Table<UserModel>().ToListAsync();
+        public async Task<List<UserModel>> GetUsersAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<UserModel>("SELECT * FROM Users");
+            return result.ToList();
+        }
 
-        public Task<EquipmentModel?> GetEquipmentByQRAsync(string qrCode) =>
-            _database.Table<EquipmentModel>().FirstOrDefaultAsync(e => e.QRCode == qrCode)!;
+        public async Task<EquipmentModel?> GetEquipmentByQRAsync(string qrCode)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.QueryFirstOrDefaultAsync<EquipmentModel>(
+                "SELECT * FROM Equipment WHERE QRCode = @QRCode",
+                new { QRCode = qrCode });
+        }
     }
 }
