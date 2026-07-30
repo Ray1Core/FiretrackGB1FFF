@@ -125,6 +125,14 @@ namespace Firetrack.ViewModels
             await _db.SaveTransactionAsync(transaction);
             await _db.SaveEquipmentAsync(capturedEquipment);
 
+            // ========== SEND NOTIFICATION TO RECEIVING OFFICER ==========
+            await _db.SendNotificationAsync(
+                capturedOfficer.Username,
+                "🔄 Equipment Issued",
+                $"{App.CurrentUser?.FullName} issued '{capturedEquipment.Name}' to you."
+            );
+            // =============================================================
+
             StatusMessage = $"✅ Equipment '{capturedEquipment.Name}' issued to {capturedOfficer.FullName}.";
 
             SelectedEquipment = null;

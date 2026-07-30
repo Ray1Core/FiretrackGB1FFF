@@ -37,6 +37,9 @@ namespace Firetrack.ViewModels
         public ICommand GoToTransferCommand { get; }
         public ICommand GoToAddUserCommand { get; }
         public ICommand GoToClearanceCommand { get; }
+        public ICommand GoToInventoryCommand { get; }
+        public ICommand GoToRequestEquipmentCommand { get; }
+        public ICommand ReturnEquipmentCommand { get; }
         public ICommand ReportDamageCommand { get; }
         public ICommand LogoutCommand { get; }
 
@@ -52,6 +55,9 @@ namespace Firetrack.ViewModels
             GoToTransferCommand = new Command(async () => await Shell.Current.GoToAsync("TransferPage"));
             GoToAddUserCommand = new Command(async () => await Shell.Current.GoToAsync("AddUserPage"));
             GoToClearanceCommand = new Command(async () => await Shell.Current.GoToAsync("ClearancePage"));
+            GoToInventoryCommand = new Command(async () => await Shell.Current.GoToAsync("InventoryPage"));
+            GoToRequestEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("RequestEquipmentPage"));
+            ReturnEquipmentCommand = new Command<EquipmentModel>(OnReturnEquipment);
             ReportDamageCommand = new Command<EquipmentModel>(OnReportDamage);
 
             LoadEquipment();
@@ -67,6 +73,60 @@ namespace Firetrack.ViewModels
             MyEquipment.Clear();
             foreach (var item in equipment)
                 MyEquipment.Add(item);
+        }
+
+        private async void OnReturnEquipment(EquipmentModel? equipment)
+        {
+            if (equipment == null) return;
+
+            if (App.CurrentUser == null || equipment.AssignedToUsername != App.CurrentUser.Username)
+            {
+                await Shell.Current.DisplayAlert("Error", "This equipment is not assigned to you.", "OK");
+                return;
+            }
+
+            bool confirm = await Shell.Current.DisplayAlert(
+                "Confirm Return",
+                $"Return '{equipment.Name}'?",
+                "Yes",
+                "Cancel");
+
+            if (!confirm) return;
+
+            try
+            {
+                equipment.Status = "Available";
+                equipment.AssignedToUsername = null;
+                equipment.LastUpdated = DateTime.Now;
+
+                var transaction = new TransactionModel
+                {
+                    EquipmentQR = equipment.QRCode,
+                    FromUser = App.CurrentUser.Username,
+                    ToUser = "System",
+                    Timestamp = DateTime.Now,
+                    Action = "Return",
+                    Remarks = $"Returned by {App.CurrentUser.FullName}"
+                };
+
+                await App.Database!.SaveEquipmentAsync(equipment);
+                await App.Database!.SaveTransactionAsync(transaction);
+
+                // ========== SEND NOTIFICATION TO ADMIN ==========
+                await App.Database!.SendNotificationAsync(
+                    "admin",
+                    "↩️ Equipment Returned",
+                    $"{App.CurrentUser?.FullName} returned '{equipment.Name}'."
+                );
+                // ================================================
+
+                await Shell.Current.DisplayAlert("Success", $"'{equipment.Name}' returned successfully.", "OK");
+                LoadEquipment(); // refresh the list
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+            }
         }
 
         private async void OnReportDamage(EquipmentModel equipment)

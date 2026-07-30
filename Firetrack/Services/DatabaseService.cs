@@ -148,5 +148,52 @@ namespace Firetrack.Services
                 "SELECT * FROM Equipment WHERE QRCode = @QRCode",
                 new { QRCode = qrCode });
         }
+
+        // ---------- Notifications ----------
+        public async Task<int> SaveNotificationAsync(NotificationModel notification)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"INSERT INTO Notifications (Username, Title, Message, IsRead, Timestamp)
+                    VALUES (@Username, @Title, @Message, @IsRead, @Timestamp);
+                    SELECT CAST(SCOPE_IDENTITY() as int);";
+            return await connection.ExecuteScalarAsync<int>(sql, notification);
+        }
+
+        public async Task<List<NotificationModel>> GetNotificationsForUserAsync(string username)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<NotificationModel>(
+                "SELECT * FROM Notifications WHERE Username = @Username ORDER BY Timestamp DESC",
+                new { Username = username });
+            return result.ToList();
+        }
+
+        public async Task<int> MarkNotificationAsReadAsync(int notificationId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.ExecuteAsync(
+                "UPDATE Notifications SET IsRead = 1 WHERE NotificationId = @NotificationId",
+                new { NotificationId = notificationId });
+        }
+
+        public async Task<int> MarkAllNotificationsAsReadAsync(string username)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            return await connection.ExecuteAsync(
+                "UPDATE Notifications SET IsRead = 1 WHERE Username = @Username",
+                new { Username = username });
+        }
+
+        public async Task SendNotificationAsync(string username, string title, string message)
+        {
+            await SaveNotificationAsync(new NotificationModel
+            {
+                Username = username,
+                Title = title,
+                Message = message,
+                IsRead = false,
+                Timestamp = DateTime.Now
+            });
+        }
     }
 }

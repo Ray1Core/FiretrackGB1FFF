@@ -15,6 +15,7 @@
             <converters:StatusColorConverter x:Key="StatusColorConverter" />
             <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
             <converters:StringToColorConverter x:Key="StringToColorConverter" />
+            <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZero" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

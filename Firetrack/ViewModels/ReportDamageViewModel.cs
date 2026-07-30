@@ -155,6 +155,14 @@ namespace Firetrack.ViewModels
                 await _db.SaveEquipmentAsync(Equipment);
                 await _db.SaveTransactionAsync(transaction);
 
+                // ========== SEND NOTIFICATION TO ADMIN ==========
+                await _db.SendNotificationAsync(
+                    "admin",
+                    "⚠️ Damage Report",
+                    $"{App.CurrentUser?.FullName} reported damage on '{Equipment.Name}'."
+                );
+                // ================================================
+
                 StatusMessage = "✅ Damage report submitted successfully!";
                 await Task.Delay(2000);
                 await Shell.Current.GoToAsync("..");
