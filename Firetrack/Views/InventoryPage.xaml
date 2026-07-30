@@ -58,20 +58,24 @@
                                            Grid.Column="1" />
                                 </Grid>
 
-                                <!-- Row 2: Type + Status -->
+                                <!-- Row 2: Type + Status (clickable) -->
                                 <Grid ColumnDefinitions="*, Auto">
                                     <Label Text="{Binding Type, StringFormat='Type: {0}'}"
                                            FontSize="13"
                                            TextColor="{StaticResource TextSecondaryColor}"
                                            Grid.Column="0" />
-                                    <!-- FIXED: Removed CornerRadius from Label -->
-                                    <Label Text="{Binding Status}"
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Status}"
                                            FontSize="12"
                                            Padding="8,3"
                                            HorizontalTextAlignment="Center"
                                            TextColor="White"
-                                           BackgroundColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
-                                           Grid.Column="1" />
+                                           BackgroundColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowEquipmentDetailsCommand}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
                                 </Grid>
 
                                 <!-- Row 3: Assigned To -->
@@ -79,7 +83,7 @@
                                        FontSize="12"
                                        TextColor="{StaticResource TextSecondaryColor}" />
 
-                                <!-- Row 4: Action Buttons (Edit, History, Delete) -->
+                                <!-- Row 4: Action Buttons -->
                                 <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10" Margin="0,5,0,0">
                                     <Button Text="✏️ Edit"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditEquipmentCommand}"
@@ -109,7 +113,7 @@
             </CollectionView>
         </RefreshView>
 
-        <!-- Back Button (floating at bottom) -->
+        <!-- Back Button -->
         <Button Grid.Row="2"
                 Text="← Back to Dashboard"
                 Command="{Binding GoBackCommand}"

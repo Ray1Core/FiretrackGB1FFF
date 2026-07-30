@@ -48,7 +48,8 @@ namespace Firetrack.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand DeleteEquipmentCommand { get; }
         public ICommand EditEquipmentCommand { get; }
-        public ICommand ViewHistoryCommand { get; }        // <-- ADDED
+        public ICommand ViewHistoryCommand { get; }
+        public ICommand ShowEquipmentDetailsCommand { get; }
         public ICommand GoBackCommand { get; }
 
         public InventoryViewModel()
@@ -57,7 +58,8 @@ namespace Firetrack.ViewModels
             SearchCommand = new Command(OnSearch);
             DeleteEquipmentCommand = new Command<EquipmentModel>(OnDeleteEquipment);
             EditEquipmentCommand = new Command<EquipmentModel>(OnEditEquipment);
-            ViewHistoryCommand = new Command<EquipmentModel>(OnViewHistory);   // <-- ADDED
+            ViewHistoryCommand = new Command<EquipmentModel>(OnViewHistory);
+            ShowEquipmentDetailsCommand = new Command<EquipmentModel>(OnShowEquipmentDetails);
             GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
 
             OnLoadEquipments();
@@ -133,6 +135,7 @@ namespace Firetrack.ViewModels
         {
             if (equipment == null) return;
 
+            // Show name prompt
             string newName = await Shell.Current.DisplayPromptAsync(
                 "Edit Equipment",
                 $"Current name: {equipment.Name}\nEnter new name:",
@@ -140,11 +143,20 @@ namespace Firetrack.ViewModels
                 "Cancel",
                 placeholder: equipment.Name);
 
+            // If user cancelled, skip the status selection
+            if (newName == null)
+            {
+                // User cancelled – do nothing
+                return;
+            }
+
+            // If user changed the name, update it
             if (!string.IsNullOrWhiteSpace(newName) && newName != equipment.Name)
             {
                 equipment.Name = newName.Trim();
             }
 
+            // Show status selection (only if not cancelled)
             string newStatus = await Shell.Current.DisplayActionSheet(
                 "Select Status",
                 "Cancel",
@@ -159,6 +171,7 @@ namespace Firetrack.ViewModels
                 equipment.Status = newStatus;
             }
 
+            // Save changes
             try
             {
                 await App.Database!.SaveEquipmentAsync(equipment);
@@ -171,16 +184,31 @@ namespace Firetrack.ViewModels
             }
         }
 
-        // ===== NEW: View History Command =====
         private async void OnViewHistory(EquipmentModel? equipment)
         {
             if (equipment == null) return;
 
             var navParams = new Dictionary<string, object>
-            {
-                { "equipment", equipment }
-            };
+    {
+        { "equipment", equipment }
+    };
+            // Use relative navigation (no "//")
             await Shell.Current.GoToAsync("TransactionHistoryPage", navParams);
+        }
+
+        private async void OnShowEquipmentDetails(EquipmentModel? equipment)
+        {
+            if (equipment == null) return;
+
+            await Shell.Current.DisplayAlert(
+                "Equipment Details",
+                $"Name: {equipment.Name}\n" +
+                $"QR: {equipment.QRCode}\n" +
+                $"Type: {equipment.Type}\n" +
+                $"Status: {equipment.Status}\n" +
+                $"Assigned to: {equipment.AssignedToUsername ?? "None"}\n" +
+                $"Remarks: {equipment.Remarks ?? "None"}",
+                "OK");
         }
     }
 }

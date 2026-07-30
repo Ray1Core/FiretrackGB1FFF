@@ -9,8 +9,8 @@ public partial class AppShell : Shell
         InitializeComponent();
 #pragma warning disable CA1416
 
-        Routing.RegisterRoute("LoginPage", typeof(LoginPage));
-        Routing.RegisterRoute("DashboardPage", typeof(DashboardPage));
+        // Register only pages that are NOT defined in XAML ShellContent.
+        // LoginPage and DashboardPage are already defined in AppShell.xaml, so skip them.
         Routing.RegisterRoute("TransferPage", typeof(TransferPage));
         Routing.RegisterRoute("ReportDamagePage", typeof(ReportDamagePage));
         Routing.RegisterRoute("IcsPage", typeof(IcsPage));

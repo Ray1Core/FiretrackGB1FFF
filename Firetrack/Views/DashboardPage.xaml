@@ -40,16 +40,23 @@
                                            Grid.Column="0"
                                            FontSize="14"
                                            TextColor="{StaticResource TextPrimaryColor}" />
-                                    <Label Text="{Binding Status}"
-                                           Grid.Column="1"
+
+                                    <!-- Status Label with Tap Gesture -->
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Status}"
                                            FontSize="12"
                                            Padding="6,2"
                                            Margin="5,0"
                                            HorizontalTextAlignment="Center"
                                            TextColor="White"
-                                           BackgroundColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
+                                           BackgroundColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ShowEquipmentDetailsCommand}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
 
-                                    <!-- Return Button (only if assigned to current user) -->
+                                    <!-- Return Button -->
                                     <Button Grid.Column="2"
                                             Text="↩️ Return"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ReturnEquipmentCommand}"
@@ -79,14 +86,14 @@
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Common Button: Request Equipment (visible to all) -->
+            <!-- Common Button: Request Equipment -->
             <Button Text="📋 Request Equipment"
                     Command="{Binding GoToRequestEquipmentCommand}"
                     Style="{StaticResource PrimaryButton}" />
 
             <!-- Action Buttons Grid -->
             <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" ColumnSpacing="12" RowSpacing="12">
-                <!-- Row 1: Scan QR (common) -->
+                <!-- Row 1: Scan QR -->
                 <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="📷 Scan QR"
                         Command="{Binding GoToScannerCommand}"
@@ -116,14 +123,14 @@
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 4: Admin Only (NEW) -->
+                <!-- Row 4: Admin Only -->
                 <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="📋 Inventory"
                         Command="{Binding GoToInventoryCommand}"
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 5: Logout (common) -->
+                <!-- Row 5: Logout -->
                 <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="🚪 Logout"
                         Command="{Binding LogoutCommand}"

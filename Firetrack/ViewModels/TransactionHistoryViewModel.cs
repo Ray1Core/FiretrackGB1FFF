@@ -42,7 +42,7 @@ namespace Firetrack.ViewModels
         public TransactionHistoryViewModel(EquipmentModel equipment)
         {
             Equipment = equipment;
-            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
+            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync("..")); // go back to previous page
             LoadTransactions();
         }
 

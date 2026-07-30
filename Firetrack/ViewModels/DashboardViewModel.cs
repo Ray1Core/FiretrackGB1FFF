@@ -32,6 +32,7 @@ namespace Firetrack.ViewModels
 
         public string UserRole => App.CurrentUser?.Role ?? "Guest";
 
+        // Commands
         public ICommand GoToScannerCommand { get; }
         public ICommand GoToGenerateCommand { get; }
         public ICommand GoToTransferCommand { get; }
@@ -42,6 +43,7 @@ namespace Firetrack.ViewModels
         public ICommand ReturnEquipmentCommand { get; }
         public ICommand ReportDamageCommand { get; }
         public ICommand LogoutCommand { get; }
+        public ICommand ShowEquipmentDetailsCommand { get; }   // <-- single declaration
 
         public DashboardViewModel()
         {
@@ -59,6 +61,7 @@ namespace Firetrack.ViewModels
             GoToRequestEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("RequestEquipmentPage"));
             ReturnEquipmentCommand = new Command<EquipmentModel>(OnReturnEquipment);
             ReportDamageCommand = new Command<EquipmentModel>(OnReportDamage);
+            ShowEquipmentDetailsCommand = new Command<EquipmentModel>(OnShowEquipmentDetails);   // <-- initialized
 
             LoadEquipment();
         }
@@ -75,21 +78,16 @@ namespace Firetrack.ViewModels
                 MyEquipment.Add(item);
         }
 
-        // ========== ADD THIS METHOD ==========
         public void RefreshDashboard()
         {
-            // Update welcome message and role
             var user = App.CurrentUser;
             WelcomeMessage = $"Welcome, {user?.FullName ?? "Firefighter"}!";
             IsAdmin = user?.Role == "Admin";
             OnPropertyChanged(nameof(WelcomeMessage));
             OnPropertyChanged(nameof(IsAdmin));
             OnPropertyChanged(nameof(UserRole));
-
-            // Reload equipment
             LoadEquipment();
         }
-        // =====================================
 
         private async void OnReturnEquipment(EquipmentModel? equipment)
         {
@@ -152,6 +150,21 @@ namespace Firetrack.ViewModels
                 { "equipment", equipment }
             };
             await Shell.Current.GoToAsync("ReportDamagePage", navigationParams);
+        }
+
+        private async void OnShowEquipmentDetails(EquipmentModel? equipment)
+        {
+            if (equipment == null) return;
+
+            await Shell.Current.DisplayAlert(
+                "Equipment Details",
+                $"Name: {equipment.Name}\n" +
+                $"QR: {equipment.QRCode}\n" +
+                $"Type: {equipment.Type}\n" +
+                $"Status: {equipment.Status}\n" +
+                $"Assigned to: {equipment.AssignedToUsername ?? "None"}\n" +
+                $"Remarks: {equipment.Remarks ?? "None"}",
+                "OK");
         }
 
         private async void OnLogout()
