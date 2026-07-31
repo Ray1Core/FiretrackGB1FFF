@@ -26,9 +26,9 @@
                            FontAttributes="Bold"
                            FontSize="16"
                            TextColor="{StaticResource PrimaryColor}" />
-                    <Label Text="{Binding Equipment.Name, StringFormat='Name: {0}'}" />
-                    <Label Text="{Binding Equipment.QRCode, StringFormat='QR Code: {0}'}" />
-                    <Label Text="{Binding Equipment.Type, StringFormat='Type: {0}'}" />
+                    <Label Text="{Binding Equipment.Name}" />
+                    <Label Text="{Binding Equipment.QRCode}" />
+                    <Label Text="{Binding Equipment.Type}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -39,9 +39,9 @@
                            FontAttributes="Bold"
                            FontSize="16"
                            TextColor="{StaticResource PrimaryColor}" />
-                    <Label Text="{Binding Officer.FullName, StringFormat='Name: {0}'}" />
-                    <Label Text="{Binding Officer.Username, StringFormat='ID: {0}'}" />
-                    <Label Text="{Binding Officer.Role, StringFormat='Role: {0}'}" />
+                    <Label Text="{Binding Officer.FullName}" />
+                    <Label Text="{Binding Officer.Username}" />
+                    <Label Text="{Binding Officer.Role}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -52,8 +52,8 @@
                            FontAttributes="Bold"
                            FontSize="16"
                            TextColor="{StaticResource PrimaryColor}" />
-                    <Label Text="{Binding Issuer.FullName, StringFormat='Name: {0}'}" />
-                    <Label Text="{Binding Issuer.Role, StringFormat='Position: {0}'}" />
+                    <Label Text="{Binding Issuer.FullName}" />
+                    <Label Text="{Binding Issuer.Role}" />
                 </VerticalStackLayout>
             </Border>
 

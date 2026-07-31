@@ -26,12 +26,20 @@
                            FontAttributes="Bold"
                            FontSize="16"
                            TextColor="{StaticResource PrimaryColor}" />
-                    <Picker Title="Select Officer"
-                            ItemsSource="{Binding Users}"
-                            ItemDisplayBinding="{Binding FullName}"
-                            SelectedItem="{Binding SelectedOfficer}"
-                            TextColor="{StaticResource TextPrimaryColor}"
-                            TitleColor="{StaticResource TextSecondaryColor}" />
+                    <!-- Border with visible shape -->
+                    <Border Stroke="LightGray" 
+                            StrokeThickness="1" 
+                            Padding="10" 
+                            StrokeShape="RoundRectangle 8" 
+                            BackgroundColor="White">
+                        <Picker Title="Select Officer"
+                                ItemsSource="{Binding Users}"
+                                ItemDisplayBinding="{Binding FullName}"
+                                SelectedItem="{Binding SelectedOfficer}"
+                                TextColor="{StaticResource TextPrimaryColor}"
+                                TitleColor="{StaticResource TextSecondaryColor}"
+                                BackgroundColor="Transparent" />
+                    </Border>
                 </VerticalStackLayout>
             </Border>
 
@@ -42,19 +50,33 @@
                            FontAttributes="Bold"
                            FontSize="16"
                            TextColor="{StaticResource PrimaryColor}" />
-                    <Picker Title="Select Equipment"
-                            ItemsSource="{Binding EquipmentList}"
-                            ItemDisplayBinding="{Binding Name}"
-                            SelectedItem="{Binding SelectedEquipment}"
-                            TextColor="{StaticResource TextPrimaryColor}"
-                            TitleColor="{StaticResource TextSecondaryColor}" />
+                    <Border Stroke="LightGray" 
+                            StrokeThickness="1" 
+                            Padding="10" 
+                            StrokeShape="RoundRectangle 8" 
+                            BackgroundColor="White">
+                        <Picker Title="Select Equipment"
+                                ItemsSource="{Binding EquipmentList}"
+                                ItemDisplayBinding="{Binding Name}"
+                                SelectedItem="{Binding SelectedEquipment}"
+                                TextColor="{StaticResource TextPrimaryColor}"
+                                TitleColor="{StaticResource TextSecondaryColor}"
+                                BackgroundColor="Transparent" />
+                    </Border>
                     <Label Text="- OR -"
                            HorizontalOptions="Center"
                            FontAttributes="Italic"
                            TextColor="{StaticResource TextSecondaryColor}" />
-                    <Entry Style="{StaticResource EntryStyle}"
-                           Placeholder="Enter QR code manually"
-                           Text="{Binding ManualEquipmentQR}" />
+                    <Border Stroke="LightGray" 
+                            StrokeThickness="1" 
+                            Padding="10" 
+                            StrokeShape="RoundRectangle 8" 
+                            BackgroundColor="White">
+                        <Entry Style="{StaticResource EntryStyle}"
+                               Placeholder="Enter QR code manually"
+                               Text="{Binding ManualEquipmentQR}"
+                               BackgroundColor="Transparent" />
+                    </Border>
                 </VerticalStackLayout>
             </Border>
 

@@ -50,13 +50,81 @@ namespace Firetrack.ViewModels
         public ICommand GenerateIcsCommand { get; }
         public ICommand GoBackCommand { get; }
 
-        public IcsViewModel(EquipmentModel equipment, UserModel officer)
+        // 👇 Constructor now accepts nullable parameters
+        public IcsViewModel(EquipmentModel? equipment, UserModel? officer)
         {
+            // DEBUG: Log received parameters
+            System.Diagnostics.Debug.WriteLine($"📄 IcsViewModel: Received Equipment = {(equipment?.Name ?? "NULL")}");
+            System.Diagnostics.Debug.WriteLine($"📄 IcsViewModel: Received Officer = {(officer?.FullName ?? "NULL")}");
+
             _db = App.Database!;
             _pdfService = new PdfGenerationService();
-            Equipment = equipment;
-            Officer = officer;
-            Issuer = App.CurrentUser ?? new UserModel { FullName = "System", Role = "Admin" };
+
+            // --- Equipment ---
+            if (equipment == null)
+            {
+                Equipment = new EquipmentModel
+                {
+                    Name = "Unknown Equipment",
+                    QRCode = "N/A",
+                    Type = "N/A",
+                    Status = "N/A"
+                };
+                System.Diagnostics.Debug.WriteLine("⚠️ Equipment was null, using fallback.");
+            }
+            else
+            {
+                Equipment = equipment;
+                // Ensure properties are not empty
+                if (string.IsNullOrEmpty(Equipment.Name))
+                    Equipment.Name = "Unknown Equipment";
+                if (string.IsNullOrEmpty(Equipment.QRCode))
+                    Equipment.QRCode = "N/A";
+                if (string.IsNullOrEmpty(Equipment.Type))
+                    Equipment.Type = "N/A";
+                if (string.IsNullOrEmpty(Equipment.Status))
+                    Equipment.Status = "N/A";
+            }
+
+            // --- Officer ---
+            if (officer == null)
+            {
+                Officer = new UserModel
+                {
+                    FullName = "Unknown Officer",
+                    Username = "N/A",
+                    Role = "N/A"
+                };
+                System.Diagnostics.Debug.WriteLine("⚠️ Officer was null, using fallback.");
+            }
+            else
+            {
+                Officer = officer;
+                if (string.IsNullOrEmpty(Officer.FullName))
+                    Officer.FullName = "Unknown Officer";
+                if (string.IsNullOrEmpty(Officer.Username))
+                    Officer.Username = "N/A";
+                if (string.IsNullOrEmpty(Officer.Role))
+                    Officer.Role = "N/A";
+            }
+
+            // --- Issuer ---
+            Issuer = App.CurrentUser ?? new UserModel
+            {
+                FullName = "System",
+                Role = "Admin",
+                Username = "system"
+            };
+            if (string.IsNullOrEmpty(Issuer.FullName))
+                Issuer.FullName = "System";
+            if (string.IsNullOrEmpty(Issuer.Role))
+                Issuer.Role = "Admin";
+            if (string.IsNullOrEmpty(Issuer.Username))
+                Issuer.Username = "system";
+
+            System.Diagnostics.Debug.WriteLine($"✅ Equipment set: {Equipment.Name}, QR: {Equipment.QRCode}, Type: {Equipment.Type}");
+            System.Diagnostics.Debug.WriteLine($"✅ Officer set: {Officer.FullName}, Username: {Officer.Username}, Role: {Officer.Role}");
+            System.Diagnostics.Debug.WriteLine($"✅ Issuer set: {Issuer.FullName}, Role: {Issuer.Role}");
 
             GenerateIcsCommand = new Command(OnGenerateIcs);
             GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));

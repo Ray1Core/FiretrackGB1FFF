@@ -141,6 +141,10 @@ namespace Firetrack.ViewModels
 
             await LoadDataAsync();
 
+            // ========== ADD DEBUG LINE ==========
+            System.Diagnostics.Debug.WriteLine($"Transferring: {capturedEquipment.Name} to {capturedOfficer.FullName}");
+            // ===================================
+
             var navParams = new Dictionary<string, object>
             {
                 { "equipment", capturedEquipment },
