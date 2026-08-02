@@ -13,6 +13,7 @@ namespace Firetrack.ViewModels
         private EquipmentModel? _selectedEquipment;
         private string _manualEquipmentQR = string.Empty;
         private string _statusMessage = string.Empty;
+        private bool _isBusy;
 
         public ObservableCollection<UserModel> Users { get; set; } = new();
         public ObservableCollection<EquipmentModel> EquipmentList { get; set; } = new();
@@ -41,6 +42,12 @@ namespace Firetrack.ViewModels
             set { _statusMessage = value; OnPropertyChanged(); }
         }
 
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set { _isBusy = value; OnPropertyChanged(); }
+        }
+
         public ICommand TransferCommand { get; }
         public ICommand GoBackCommand { get; }
 
@@ -64,15 +71,23 @@ namespace Firetrack.ViewModels
         {
             if (_db == null) return;
 
-            var userList = await _db.GetUsersAsync();
-            Users.Clear();
-            foreach (var u in userList)
-                Users.Add(u);
+            IsBusy = true;
+            try
+            {
+                var userList = await _db.GetUsersAsync();
+                Users.Clear();
+                foreach (var u in userList)
+                    Users.Add(u);
 
-            var eqList = await _db.GetEquipmentsAsync();
-            EquipmentList.Clear();
-            foreach (var eq in eqList)
-                EquipmentList.Add(eq);
+                var eqList = await _db.GetEquipmentsAsync();
+                EquipmentList.Clear();
+                foreach (var eq in eqList)
+                    EquipmentList.Add(eq);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async void OnTransfer()
@@ -105,52 +120,61 @@ namespace Firetrack.ViewModels
                 return;
             }
 
-            var capturedOfficer = SelectedOfficer;
-            var capturedEquipment = equipment;
-
-            var transaction = new TransactionModel
+            IsBusy = true;
+            try
             {
-                EquipmentQR = capturedEquipment.QRCode,
-                FromUser = App.CurrentUser?.Username ?? "admin",
-                ToUser = capturedOfficer.Username,
-                Timestamp = DateTime.Now,
-                Action = "Issue",
-                Remarks = $"Issued to {capturedOfficer.FullName}"
-            };
+                var capturedOfficer = SelectedOfficer;
+                var capturedEquipment = equipment;
 
-            capturedEquipment.AssignedToUsername = capturedOfficer.Username;
-            capturedEquipment.Status = "Issued";
-            capturedEquipment.LastUpdated = DateTime.Now;
+                var transaction = new TransactionModel
+                {
+                    EquipmentQR = capturedEquipment.QRCode,
+                    FromUser = App.CurrentUser?.Username ?? "admin",
+                    ToUser = capturedOfficer.Username,
+                    Timestamp = DateTime.Now,
+                    Action = "Issue",
+                    Remarks = $"Issued to {capturedOfficer.FullName}"
+                };
 
-            await _db.SaveTransactionAsync(transaction);
-            await _db.SaveEquipmentAsync(capturedEquipment);
+                capturedEquipment.AssignedToUsername = capturedOfficer.Username;
+                capturedEquipment.Status = "Issued";
+                capturedEquipment.LastUpdated = DateTime.Now;
 
-            // ========== SEND NOTIFICATION TO RECEIVING OFFICER ==========
-            await _db.SendNotificationAsync(
-                capturedOfficer.Username,
-                "🔄 Equipment Issued",
-                $"{App.CurrentUser?.FullName} issued '{capturedEquipment.Name}' to you."
-            );
-            // =============================================================
+                await _db.SaveTransactionAsync(transaction);
+                await _db.SaveEquipmentAsync(capturedEquipment);
 
-            StatusMessage = $"✅ Equipment '{capturedEquipment.Name}' issued to {capturedOfficer.FullName}.";
+                // Send notification to receiving officer
+                await _db.SendNotificationAsync(
+                    capturedOfficer.Username,
+                    "🔄 Equipment Issued",
+                    $"{App.CurrentUser?.FullName} issued '{capturedEquipment.Name}' to you."
+                );
 
-            SelectedEquipment = null;
-            ManualEquipmentQR = string.Empty;
-            SelectedOfficer = null;
+                StatusMessage = $"✅ Equipment '{capturedEquipment.Name}' issued to {capturedOfficer.FullName}.";
 
-            await LoadDataAsync();
+                SelectedEquipment = null;
+                ManualEquipmentQR = string.Empty;
+                SelectedOfficer = null;
 
-            // ========== ADD DEBUG LINE ==========
-            System.Diagnostics.Debug.WriteLine($"Transferring: {capturedEquipment.Name} to {capturedOfficer.FullName}");
-            // ===================================
+                await LoadDataAsync();
 
-            var navParams = new Dictionary<string, object>
+                System.Diagnostics.Debug.WriteLine($"Transferring: {capturedEquipment.Name} to {capturedOfficer.FullName}");
+
+                var navParams = new Dictionary<string, object>
+                {
+                    { "equipment", capturedEquipment },
+                    { "officer", capturedOfficer }
+                };
+                await Shell.Current.GoToAsync("IcsPage", navParams);
+            }
+            catch (Exception ex)
             {
-                { "equipment", capturedEquipment },
-                { "officer", capturedOfficer }
-            };
-            await Shell.Current.GoToAsync("IcsPage", navParams);
+                StatusMessage = $"❌ Error: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
     }
 }
