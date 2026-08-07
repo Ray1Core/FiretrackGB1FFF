@@ -50,6 +50,7 @@ namespace Firetrack.ViewModels
         public ICommand EditEquipmentCommand { get; }
         public ICommand ViewHistoryCommand { get; }
         public ICommand ShowEquipmentDetailsCommand { get; }
+        public ICommand GoToAddEquipmentCommand { get; }   // <-- ADDED
         public ICommand GoBackCommand { get; }
 
         public InventoryViewModel()
@@ -60,6 +61,7 @@ namespace Firetrack.ViewModels
             EditEquipmentCommand = new Command<EquipmentModel>(OnEditEquipment);
             ViewHistoryCommand = new Command<EquipmentModel>(OnViewHistory);
             ShowEquipmentDetailsCommand = new Command<EquipmentModel>(OnShowEquipmentDetails);
+            GoToAddEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("AddEquipmentPage"));   // <-- ADDED
             GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
 
             OnLoadEquipments();
@@ -189,9 +191,9 @@ namespace Firetrack.ViewModels
             if (equipment == null) return;
 
             var navParams = new Dictionary<string, object>
-    {
-        { "equipment", equipment }
-    };
+            {
+                { "equipment", equipment }
+            };
             // Use relative navigation (no "//")
             await Shell.Current.GoToAsync("TransactionHistoryPage", navParams);
         }

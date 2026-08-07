@@ -2,28 +2,39 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Firetrack.Views.InventoryPage"
-             Title="Equipment Inventory">
+             Title="Equipment Inventory"
+             BackgroundColor="{StaticResource Background}">
 
     <Grid RowDefinitions="Auto, Auto, *">
-        <!-- Header -->
-        <VerticalStackLayout Grid.Row="0" Padding="20" Spacing="10" BackgroundColor="{StaticResource PrimaryColor}">
-            <Label Text="📋 Equipment Inventory"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   TextColor="White"
-                   HorizontalOptions="Center" />
+        <!-- Header with Add Button -->
+        <VerticalStackLayout Grid.Row="0" Padding="20" Spacing="10" BackgroundColor="{StaticResource Background}">
+            <Grid ColumnDefinitions="*, Auto">
+                <Label Text="📋 Equipment Inventory"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource OnBackground}"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1"
+                        Text="➕ Add"
+                        Command="{Binding GoToAddEquipmentCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="40"
+                        FontSize="14" />
+            </Grid>
             <Label Text="Manage all equipment in the station."
                    FontSize="14"
-                   TextColor="#E0E0E0"
-                   HorizontalOptions="Center" />
+                   TextColor="{StaticResource Gray300}" />
         </VerticalStackLayout>
 
         <!-- Search Bar -->
-        <VerticalStackLayout Grid.Row="1" Padding="20" Spacing="10" BackgroundColor="{StaticResource BackgroundColor}">
+        <VerticalStackLayout Grid.Row="1" Padding="20" Spacing="10" BackgroundColor="{StaticResource Background}">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10">
                 <Entry Style="{StaticResource EntryStyle}"
                        Placeholder="Search by name, QR, or type..."
-                       Text="{Binding SearchText}" />
+                       Text="{Binding SearchText}"
+                       TextColor="{StaticResource OnBackground}"
+                       PlaceholderColor="{StaticResource Gray300}"
+                       BackgroundColor="{StaticResource Surface}" />
                 <Button Grid.Column="1"
                         Text="🔍 Search"
                         Style="{StaticResource PrimaryButton}"
@@ -50,11 +61,11 @@
                                     <Label Text="{Binding Name}"
                                            FontSize="16"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimaryColor}"
+                                           TextColor="{StaticResource OnBackground}"
                                            Grid.Column="0" />
                                     <Label Text="{Binding QRCode}"
                                            FontSize="12"
-                                           TextColor="{StaticResource TextSecondaryColor}"
+                                           TextColor="{StaticResource Gray300}"
                                            Grid.Column="1" />
                                 </Grid>
 
@@ -62,7 +73,7 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <Label Text="{Binding Type, StringFormat='Type: {0}'}"
                                            FontSize="13"
-                                           TextColor="{StaticResource TextSecondaryColor}"
+                                           TextColor="{StaticResource Gray300}"
                                            Grid.Column="0" />
                                     <Label Grid.Column="1"
                                            Text="{Binding Status}"
@@ -81,7 +92,7 @@
                                 <!-- Row 3: Assigned To -->
                                 <Label Text="{Binding AssignedToUsername, StringFormat='Assigned to: {0}'}"
                                        FontSize="12"
-                                       TextColor="{StaticResource TextSecondaryColor}" />
+                                       TextColor="{StaticResource Gray300}" />
 
                                 <!-- Row 4: Action Buttons -->
                                 <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10" Margin="0,5,0,0">

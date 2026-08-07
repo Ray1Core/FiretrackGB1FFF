@@ -22,5 +22,6 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("RequestEquipmentPage", typeof(RequestEquipmentPage));
         Routing.RegisterRoute("TransactionHistoryPage", typeof(TransactionHistoryPage));
         Routing.RegisterRoute("NotificationsPage", typeof(NotificationsPage));
+        Routing.RegisterRoute("AddEquipmentPage", typeof(Views.AddEquipmentPage));
     }
 }
