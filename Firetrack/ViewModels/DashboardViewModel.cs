@@ -41,7 +41,8 @@ namespace Firetrack.ViewModels
         public ICommand GoToInventoryCommand { get; }
         public ICommand GoToRequestEquipmentCommand { get; }
         public ICommand GoToProfileCommand { get; }
-        public ICommand GoToUserManagementCommand { get; }   // <-- NEW
+        public ICommand GoToUserManagementCommand { get; }
+        public ICommand GoToPendingRequestsCommand { get; }   // <-- NEW
         public ICommand ReturnEquipmentCommand { get; }
         public ICommand ReportDamageCommand { get; }
         public ICommand LogoutCommand { get; }
@@ -62,7 +63,8 @@ namespace Firetrack.ViewModels
             GoToInventoryCommand = new Command(async () => await Shell.Current.GoToAsync("InventoryPage"));
             GoToRequestEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("RequestEquipmentPage"));
             GoToProfileCommand = new Command(async () => await Shell.Current.GoToAsync("ProfilePage"));
-            GoToUserManagementCommand = new Command(async () => await Shell.Current.GoToAsync("UserManagementPage"));   // <-- NEW
+            GoToUserManagementCommand = new Command(async () => await Shell.Current.GoToAsync("UserManagementPage"));
+            GoToPendingRequestsCommand = new Command(async () => await Shell.Current.GoToAsync("PendingRequestsPage"));   // <-- NEW
             ReturnEquipmentCommand = new Command<EquipmentModel>(OnReturnEquipment);
             ReportDamageCommand = new Command<EquipmentModel>(OnReportDamage);
             ShowEquipmentDetailsCommand = new Command<EquipmentModel>(OnShowEquipmentDetails);

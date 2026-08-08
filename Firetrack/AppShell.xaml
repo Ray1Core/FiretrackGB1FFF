@@ -42,7 +42,6 @@
     <ShellContent Title="Profile"
                   ContentTemplate="{DataTemplate views:ProfilePage}"
                   Route="ProfilePage" />
-    <!-- NEW -->
 
     <!-- Personnel pages -->
     <ShellContent Title="Request Equipment"
@@ -65,6 +64,11 @@
     <ShellContent Title="Notifications"
                   ContentTemplate="{DataTemplate views:NotificationsPage}"
                   Route="NotificationsPage" />
+
+    <!-- Pending Requests (Admin only) -->
+    <ShellContent Title="Pending Requests"
+                  ContentTemplate="{DataTemplate views:PendingRequestsPage}"
+                  Route="PendingRequestsPage" />
 
     <!-- Disabled pages (placeholders) -->
     <ShellContent Title="Generate QR"

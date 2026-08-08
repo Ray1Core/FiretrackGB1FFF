@@ -97,13 +97,13 @@
 
             <!-- Action Buttons Grid (Admin only) -->
             <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto" ColumnSpacing="12" RowSpacing="12">
-                <!-- Row 1: Scan QR (common) -->
+                <!-- Row 0: Scan QR (common) -->
                 <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="📷 Scan QR"
                         Command="{Binding GoToScannerCommand}"
                         Style="{StaticResource PrimaryButton}" />
 
-                <!-- Row 2: Admin Only -->
+                <!-- Row 1: Admin Only -->
                 <Button Grid.Row="1" Grid.Column="0"
                         Text="📱 Generate QR"
                         Command="{Binding GoToGenerateCommand}"
@@ -115,7 +115,7 @@
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 3: Admin Only -->
+                <!-- Row 2: Admin Only -->
                 <Button Grid.Row="2" Grid.Column="0"
                         Text="👤 Add User"
                         Command="{Binding GoToAddUserCommand}"
@@ -127,7 +127,7 @@
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 4: Admin Only (NEW) -->
+                <!-- Row 3: Admin Only -->
                 <Button Grid.Row="3" Grid.Column="0"
                         Text="👥 User Management"
                         Command="{Binding GoToUserManagementCommand}"
@@ -136,6 +136,13 @@
                 <Button Grid.Row="3" Grid.Column="1"
                         Text="📋 Inventory"
                         Command="{Binding GoToInventoryCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        IsVisible="{Binding IsAdmin}" />
+
+                <!-- Row 4: Admin Only (NEW) -->
+                <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                        Text="📋 Pending Requests"
+                        Command="{Binding GoToPendingRequestsCommand}"
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 

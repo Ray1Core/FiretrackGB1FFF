@@ -50,7 +50,12 @@ namespace Firetrack.ViewModels
             try
             {
                 var all = await App.Database.GetEquipmentsAsync();
-                var available = all.Where(e => e.Status == "Available" && string.IsNullOrEmpty(e.AssignedToUsername));
+                // Filter: Available, not assigned, not pending request
+                var available = all.Where(e =>
+                    e.Status == "Available" &&
+                    string.IsNullOrEmpty(e.AssignedToUsername) &&
+                    string.IsNullOrEmpty(e.RequestStatus) // only truly available
+                );
                 AvailableEquipment.Clear();
                 foreach (var item in available)
                     AvailableEquipment.Add(item);
@@ -91,32 +96,21 @@ namespace Firetrack.ViewModels
             try
             {
                 var equipment = SelectedEquipment;
-                equipment.Status = "Issued";
-                equipment.AssignedToUsername = App.CurrentUser.Username;
+                equipment.RequestedByUsername = App.CurrentUser.Username;
+                equipment.RequestStatus = "Pending";
                 equipment.LastUpdated = DateTime.Now;
 
-                var transaction = new TransactionModel
-                {
-                    EquipmentQR = equipment.QRCode,
-                    FromUser = "System",
-                    ToUser = App.CurrentUser.Username,
-                    Timestamp = DateTime.Now,
-                    Action = "Issue",
-                    Remarks = $"Requested by {App.CurrentUser.FullName}"
-                };
-
                 await App.Database!.SaveEquipmentAsync(equipment);
-                await App.Database!.SaveTransactionAsync(transaction);
 
+                // Notify admin
                 await App.Database!.SendNotificationAsync(
                     "admin",
-                    "📋 Equipment Request",
-                    $"{App.CurrentUser?.FullName} requested '{equipment.Name}'."
-                );
+                    "📋 New Equipment Request",
+                    $"{App.CurrentUser.FullName} requested '{equipment.Name}'.");
 
-                await Shell.Current.DisplayAlert("Success", $"{equipment.Name} assigned to you!", "OK");
+                await Shell.Current.DisplayAlert("Success", $"Request for '{equipment.Name}' submitted for approval.", "OK");
                 SelectedEquipment = null;
-                await OnLoadAvailable();
+                await OnLoadAvailable(); // refresh list
             }
             catch (Exception ex)
             {

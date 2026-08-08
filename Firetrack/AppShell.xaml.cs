@@ -25,7 +25,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("NotificationsPage", typeof(NotificationsPage));
         Routing.RegisterRoute("GenerateQRPage", typeof(GenerateQRPage));
         Routing.RegisterRoute("ScannerPage", typeof(ScannerPage));
-        Routing.RegisterRoute("UserManagementPage", typeof(UserManagementPage));   // NEW
-        Routing.RegisterRoute("ProfilePage", typeof(ProfilePage));                 // NEW
+        Routing.RegisterRoute("UserManagementPage", typeof(UserManagementPage));
+        Routing.RegisterRoute("ProfilePage", typeof(ProfilePage));
+        Routing.RegisterRoute("PendingRequestsPage", typeof(PendingRequestsPage));   // NEW
     }
 }

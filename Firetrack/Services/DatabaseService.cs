@@ -21,6 +21,7 @@ namespace Firetrack.Services
             connection.Open();
 
             // ===== CREATE TABLES IF MISSING =====
+
             // Users (with IsActive)
             connection.Execute(@"
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
@@ -33,7 +34,7 @@ namespace Firetrack.Services
                     IsActive BIT NOT NULL DEFAULT 1
                 )");
 
-            // Add IsActive if missing (migration)
+            // Add IsActive if missing
             connection.Execute(@"
                 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
                                WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'IsActive')
@@ -41,7 +42,7 @@ namespace Firetrack.Services
                     ALTER TABLE Users ADD IsActive BIT NOT NULL DEFAULT 1;
                 END");
 
-            // Equipment
+            // Equipment (with new request columns)
             connection.Execute(@"
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Equipment' AND xtype='U')
                 CREATE TABLE Equipment (
@@ -53,8 +54,26 @@ namespace Firetrack.Services
                     AssignedToUsername NVARCHAR(50) NULL,
                     PhotoPath NVARCHAR(500) NULL,
                     Remarks NVARCHAR(500) NULL,
-                    LastUpdated DATETIME NULL
+                    LastUpdated DATETIME NULL,
+                    RequestedByUsername NVARCHAR(50) NULL,
+                    RequestStatus NVARCHAR(20) NULL
                 )");
+
+            // Add RequestedByUsername if missing
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                               WHERE TABLE_NAME = 'Equipment' AND COLUMN_NAME = 'RequestedByUsername')
+                BEGIN
+                    ALTER TABLE Equipment ADD RequestedByUsername NVARCHAR(50) NULL;
+                END");
+
+            // Add RequestStatus if missing
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                               WHERE TABLE_NAME = 'Equipment' AND COLUMN_NAME = 'RequestStatus')
+                BEGIN
+                    ALTER TABLE Equipment ADD RequestStatus NVARCHAR(20) NULL;
+                END");
 
             // Transactions
             connection.Execute(@"
@@ -153,11 +172,14 @@ namespace Firetrack.Services
                 IF EXISTS (SELECT 1 FROM Equipment WHERE EquipmentId = @EquipmentId)
                     UPDATE Equipment SET QRCode = @QRCode, Name = @Name, Type = @Type, Status = @Status,
                         AssignedToUsername = @AssignedToUsername, PhotoPath = @PhotoPath, Remarks = @Remarks,
-                        LastUpdated = @LastUpdated
+                        LastUpdated = @LastUpdated, RequestedByUsername = @RequestedByUsername,
+                        RequestStatus = @RequestStatus
                     WHERE EquipmentId = @EquipmentId
                 ELSE
-                    INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, PhotoPath, Remarks, LastUpdated)
-                    VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @PhotoPath, @Remarks, @LastUpdated);
+                    INSERT INTO Equipment (QRCode, Name, Type, Status, AssignedToUsername, PhotoPath, Remarks, LastUpdated,
+                        RequestedByUsername, RequestStatus)
+                    VALUES (@QRCode, @Name, @Type, @Status, @AssignedToUsername, @PhotoPath, @Remarks, @LastUpdated,
+                        @RequestedByUsername, @RequestStatus);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
             return await connection.ExecuteScalarAsync<int>(sql, equipment);
         }
@@ -217,7 +239,7 @@ namespace Firetrack.Services
             return result.ToList();
         }
 
-        // ===== NEW METHODS =====
+        // ===== NEW USER MANAGEMENT METHODS =====
         public async Task<int> UpdateUserAsync(UserModel user)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -236,7 +258,76 @@ namespace Firetrack.Services
             int rows = await connection.ExecuteAsync(sql, new { Password = newPassword, Username = username });
             return rows > 0;
         }
-        // =====================
+        // ==============================
+
+        // ===== REQUEST METHODS =====
+        public async Task<List<EquipmentModel>> GetPendingRequestsAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryAsync<EquipmentModel>(
+                "SELECT * FROM Equipment WHERE RequestStatus = 'Pending'");
+            return result.ToList();
+        }
+
+        public async Task<int> UpdateRequestStatusAsync(string qrCode, string status, string? approver = null)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = "UPDATE Equipment SET RequestStatus = @Status WHERE QRCode = @QRCode";
+            return await connection.ExecuteAsync(sql, new { Status = status, QRCode = qrCode });
+        }
+
+        public async Task<int> ApproveRequestAsync(string qrCode, UserModel approver)
+        {
+            var equipment = await GetEquipmentByQRAsync(qrCode);
+            if (equipment == null) return 0;
+
+            var user = await GetUserByUsernameAsync(equipment.RequestedByUsername!);
+            if (user == null) return 0;
+
+            equipment.AssignedToUsername = user.Username;
+            equipment.Status = "Issued";
+            equipment.RequestStatus = "Approved";
+            equipment.LastUpdated = DateTime.Now;
+
+            var transaction = new TransactionModel
+            {
+                EquipmentQR = equipment.QRCode,
+                FromUser = approver.Username,
+                ToUser = user.Username,
+                Timestamp = DateTime.Now,
+                Action = "Issue",
+                Remarks = $"Approved by {approver.FullName}"
+            };
+
+            await SaveEquipmentAsync(equipment);
+            await SaveTransactionAsync(transaction);
+
+            await SendNotificationAsync(user.Username, "✅ Request Approved",
+                $"Your request for '{equipment.Name}' has been approved.");
+
+            return 1;
+        }
+
+        public async Task<int> RejectRequestAsync(string qrCode, UserModel approver)
+        {
+            var equipment = await GetEquipmentByQRAsync(qrCode);
+            if (equipment == null) return 0;
+
+            var user = await GetUserByUsernameAsync(equipment.RequestedByUsername!);
+            if (user != null)
+            {
+                await SendNotificationAsync(user.Username, "❌ Request Rejected",
+                    $"Your request for '{equipment.Name}' has been rejected.");
+            }
+
+            equipment.RequestedByUsername = null;
+            equipment.RequestStatus = null;
+            equipment.LastUpdated = DateTime.Now;
+
+            await SaveEquipmentAsync(equipment);
+            return 1;
+        }
+        // ==========================
 
         public async Task<EquipmentModel?> GetEquipmentByQRAsync(string qrCode)
         {

@@ -13,5 +13,7 @@ namespace Firetrack.Models
         public string? PhotoPath { get; set; }
         public string? Remarks { get; set; }
         public DateTime? LastUpdated { get; set; }
+        public string? RequestedByUsername { get; set; }   // NEW
+        public string? RequestStatus { get; set; }         // NEW: "Pending", "Approved", "Rejected"
     }
 }
