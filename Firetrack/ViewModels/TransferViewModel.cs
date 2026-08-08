@@ -12,7 +12,6 @@ namespace Firetrack.ViewModels
         private UserModel? _selectedOfficer;
         private EquipmentModel? _selectedEquipment;
         private string _manualEquipmentQR = string.Empty;
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public ObservableCollection<UserModel> Users { get; set; } = new();
@@ -36,12 +35,6 @@ namespace Firetrack.ViewModels
             set { _manualEquipmentQR = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -55,7 +48,6 @@ namespace Firetrack.ViewModels
         {
             if (App.CurrentUser?.Role != "Admin")
             {
-                StatusMessage = "Access denied. Only Admin can transfer equipment.";
                 TransferCommand = new Command(() => { });
                 GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
                 return;
@@ -94,29 +86,20 @@ namespace Firetrack.ViewModels
         {
             if (_db == null)
             {
-                StatusMessage = "Database not available.";
+                await Shell.Current.DisplayAlert("Error", "Database not available.", "OK");
                 return;
             }
 
             if (SelectedOfficer == null)
             {
-                StatusMessage = "Please select the receiving officer.";
+                await Shell.Current.DisplayAlert("Validation", "Please select the receiving officer.", "OK");
                 return;
             }
 
             EquipmentModel? equipment = SelectedEquipment;
-            if (equipment == null && !string.IsNullOrWhiteSpace(ManualEquipmentQR))
+            if (equipment == null)
             {
-                equipment = await _db.GetEquipmentByQRAsync(ManualEquipmentQR.Trim());
-                if (equipment == null)
-                {
-                    StatusMessage = "No equipment found with that QR code.";
-                    return;
-                }
-            }
-            else if (equipment == null)
-            {
-                StatusMessage = "Please select or enter an equipment QR code.";
+                await Shell.Current.DisplayAlert("Validation", "Please select an equipment.", "OK");
                 return;
             }
 
@@ -150,16 +133,14 @@ namespace Firetrack.ViewModels
                     $"{App.CurrentUser?.FullName} issued '{capturedEquipment.Name}' to you."
                 );
 
-                StatusMessage = $"✅ Equipment '{capturedEquipment.Name}' issued to {capturedOfficer.FullName}.";
+                await Shell.Current.DisplayAlert("Success", $"Equipment '{capturedEquipment.Name}' issued to {capturedOfficer.FullName}.", "OK");
 
                 SelectedEquipment = null;
-                ManualEquipmentQR = string.Empty;
                 SelectedOfficer = null;
 
                 await LoadDataAsync();
 
-                System.Diagnostics.Debug.WriteLine($"Transferring: {capturedEquipment.Name} to {capturedOfficer.FullName}");
-
+                // Navigate to ICS page
                 var navParams = new Dictionary<string, object>
                 {
                     { "equipment", capturedEquipment },
@@ -169,7 +150,7 @@ namespace Firetrack.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

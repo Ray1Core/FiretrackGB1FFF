@@ -14,7 +14,6 @@ namespace Firetrack.ViewModels
         private EquipmentModel? _equipment;
         private UserModel? _officer;
         private UserModel? _issuer;
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public EquipmentModel Equipment
@@ -35,12 +34,6 @@ namespace Firetrack.ViewModels
             set { _issuer = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -50,52 +43,31 @@ namespace Firetrack.ViewModels
         public ICommand GenerateIcsCommand { get; }
         public ICommand GoBackCommand { get; }
 
-        // 👇 Constructor now accepts nullable parameters
         public IcsViewModel(EquipmentModel? equipment, UserModel? officer)
         {
-            // DEBUG: Log received parameters
-            System.Diagnostics.Debug.WriteLine($"📄 IcsViewModel: Received Equipment = {(equipment?.Name ?? "NULL")}");
-            System.Diagnostics.Debug.WriteLine($"📄 IcsViewModel: Received Officer = {(officer?.FullName ?? "NULL")}");
-
             _db = App.Database!;
             _pdfService = new PdfGenerationService();
 
-            // --- Equipment ---
+            // Equipment fallback
             if (equipment == null)
             {
-                Equipment = new EquipmentModel
-                {
-                    Name = "Unknown Equipment",
-                    QRCode = "N/A",
-                    Type = "N/A",
-                    Status = "N/A"
-                };
-                System.Diagnostics.Debug.WriteLine("⚠️ Equipment was null, using fallback.");
+                Equipment = new EquipmentModel { Name = "Unknown Equipment", QRCode = "N/A", Type = "N/A" };
             }
             else
             {
                 Equipment = equipment;
-                // Ensure properties are not empty
                 if (string.IsNullOrEmpty(Equipment.Name))
                     Equipment.Name = "Unknown Equipment";
                 if (string.IsNullOrEmpty(Equipment.QRCode))
                     Equipment.QRCode = "N/A";
                 if (string.IsNullOrEmpty(Equipment.Type))
                     Equipment.Type = "N/A";
-                if (string.IsNullOrEmpty(Equipment.Status))
-                    Equipment.Status = "N/A";
             }
 
-            // --- Officer ---
+            // Officer fallback
             if (officer == null)
             {
-                Officer = new UserModel
-                {
-                    FullName = "Unknown Officer",
-                    Username = "N/A",
-                    Role = "N/A"
-                };
-                System.Diagnostics.Debug.WriteLine("⚠️ Officer was null, using fallback.");
+                Officer = new UserModel { FullName = "Unknown Officer", Username = "N/A", Role = "N/A" };
             }
             else
             {
@@ -108,23 +80,11 @@ namespace Firetrack.ViewModels
                     Officer.Role = "N/A";
             }
 
-            // --- Issuer ---
-            Issuer = App.CurrentUser ?? new UserModel
-            {
-                FullName = "System",
-                Role = "Admin",
-                Username = "system"
-            };
+            Issuer = App.CurrentUser ?? new UserModel { FullName = "System", Role = "Admin" };
             if (string.IsNullOrEmpty(Issuer.FullName))
                 Issuer.FullName = "System";
             if (string.IsNullOrEmpty(Issuer.Role))
                 Issuer.Role = "Admin";
-            if (string.IsNullOrEmpty(Issuer.Username))
-                Issuer.Username = "system";
-
-            System.Diagnostics.Debug.WriteLine($"✅ Equipment set: {Equipment.Name}, QR: {Equipment.QRCode}, Type: {Equipment.Type}");
-            System.Diagnostics.Debug.WriteLine($"✅ Officer set: {Officer.FullName}, Username: {Officer.Username}, Role: {Officer.Role}");
-            System.Diagnostics.Debug.WriteLine($"✅ Issuer set: {Issuer.FullName}, Role: {Issuer.Role}");
 
             GenerateIcsCommand = new Command(OnGenerateIcs);
             GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
@@ -133,8 +93,6 @@ namespace Firetrack.ViewModels
         private async void OnGenerateIcs()
         {
             IsBusy = true;
-            StatusMessage = "Generating PDF...";
-
             try
             {
                 var pdfBytes = _pdfService.GenerateIcsPdf(Equipment, Officer, Issuer);
@@ -148,15 +106,16 @@ namespace Firetrack.ViewModels
                 var filePath = Path.Combine(downloadsPath, fileName);
                 await File.WriteAllBytesAsync(filePath, pdfBytes);
 
-                StatusMessage = $"✅ ICS saved to: {filePath}";
                 await Launcher.Default.OpenAsync(new OpenFileRequest
                 {
                     File = new ReadOnlyFile(filePath)
                 });
+
+                await Shell.Current.DisplayAlert("Success", $"ICS saved to:\n{filePath}", "OK");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

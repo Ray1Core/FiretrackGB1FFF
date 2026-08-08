@@ -9,19 +9,21 @@ public partial class AppShell : Shell
         InitializeComponent();
 #pragma warning disable CA1416
 
-        // Register only pages that are NOT defined in XAML ShellContent.
-        // LoginPage and DashboardPage are already defined in AppShell.xaml, so skip them.
+        // Routes are already defined in XAML, but we keep them here too.
+        // This ensures compatibility with our GoToAsync calls.
+        Routing.RegisterRoute("LoginPage", typeof(LoginPage));
+        Routing.RegisterRoute("DashboardPage", typeof(DashboardPage));
+        Routing.RegisterRoute("InventoryPage", typeof(InventoryPage));
         Routing.RegisterRoute("TransferPage", typeof(TransferPage));
+        Routing.RegisterRoute("AddUserPage", typeof(AddUserPage));
+        Routing.RegisterRoute("ClearancePage", typeof(ClearancePage));
+        Routing.RegisterRoute("AddEquipmentPage", typeof(AddEquipmentPage));
+        Routing.RegisterRoute("RequestEquipmentPage", typeof(RequestEquipmentPage));
         Routing.RegisterRoute("ReportDamagePage", typeof(ReportDamagePage));
         Routing.RegisterRoute("IcsPage", typeof(IcsPage));
-        Routing.RegisterRoute("ClearancePage", typeof(ClearancePage));
-        Routing.RegisterRoute("AddUserPage", typeof(AddUserPage));
-        Routing.RegisterRoute("GenerateQRPage", typeof(GenerateQRPage));
-        Routing.RegisterRoute("ScannerPage", typeof(ScannerPage));
-        Routing.RegisterRoute("InventoryPage", typeof(InventoryPage));
-        Routing.RegisterRoute("RequestEquipmentPage", typeof(RequestEquipmentPage));
         Routing.RegisterRoute("TransactionHistoryPage", typeof(TransactionHistoryPage));
         Routing.RegisterRoute("NotificationsPage", typeof(NotificationsPage));
-        Routing.RegisterRoute("AddEquipmentPage", typeof(Views.AddEquipmentPage));
+        Routing.RegisterRoute("GenerateQRPage", typeof(GenerateQRPage));
+        Routing.RegisterRoute("ScannerPage", typeof(ScannerPage));
     }
 }

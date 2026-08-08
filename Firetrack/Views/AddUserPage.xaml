@@ -2,7 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Firetrack.Views.AddUserPage"
-             Title="Add User">
+             Title="Add User"
+             BackgroundColor="{StaticResource Background}">
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
@@ -11,11 +12,11 @@
                 <Label Text="👤 Create New Account"
                        FontSize="28"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource PrimaryColor}"
+                       TextColor="{StaticResource OnBackground}"
                        HorizontalOptions="Center" />
                 <Label Text="Fill in the details to add a new user."
                        FontSize="14"
-                       TextColor="{StaticResource TextSecondaryColor}"
+                       TextColor="{StaticResource Gray300}"
                        HorizontalOptions="Center" />
             </VerticalStackLayout>
 
@@ -24,28 +25,34 @@
                 <VerticalStackLayout Spacing="16">
                     <Entry Style="{StaticResource EntryStyle}"
                            Placeholder="Username"
-                           Text="{Binding Username}" />
+                           Text="{Binding Username}"
+                           TextColor="{StaticResource OnBackground}"
+                           PlaceholderColor="{StaticResource Gray300}"
+                           BackgroundColor="{StaticResource Surface}" />
 
                     <Entry Style="{StaticResource EntryStyle}"
                            Placeholder="Password"
                            IsPassword="True"
-                           Text="{Binding Password}" />
+                           Text="{Binding Password}"
+                           TextColor="{StaticResource OnBackground}"
+                           PlaceholderColor="{StaticResource Gray300}"
+                           BackgroundColor="{StaticResource Surface}" />
 
                     <Entry Style="{StaticResource EntryStyle}"
                            Placeholder="Full Name"
-                           Text="{Binding FullName}" />
+                           Text="{Binding FullName}"
+                           TextColor="{StaticResource OnBackground}"
+                           PlaceholderColor="{StaticResource Gray300}"
+                           BackgroundColor="{StaticResource Surface}" />
 
                     <Picker Title="Select Role"
                             ItemsSource="{Binding Roles}"
                             SelectedItem="{Binding Role}"
-                            TextColor="{StaticResource TextPrimaryColor}"
-                            TitleColor="{StaticResource TextSecondaryColor}" />
+                            TextColor="{StaticResource OnBackground}"
+                            TitleColor="{StaticResource Gray300}"
+                            BackgroundColor="{StaticResource Surface}" />
 
-                    <Label Text="{Binding StatusMessage}"
-                           TextColor="{Binding StatusMessage, Converter={StaticResource StringToColorConverter}}"
-                           HorizontalOptions="Center"
-                           FontSize="14" />
-
+                    <!-- Buttons -->
                     <Button Text="Create Account"
                             Style="{StaticResource SuccessButton}"
                             Command="{Binding SaveUserCommand}" />
@@ -55,7 +62,7 @@
                             Command="{Binding CancelCommand}" />
 
                     <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                       Color="{StaticResource PrimaryColor}" />
+                                       Color="{StaticResource OnBackground}" />
                 </VerticalStackLayout>
             </Border>
         </VerticalStackLayout>

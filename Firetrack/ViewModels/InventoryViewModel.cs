@@ -11,7 +11,6 @@ namespace Firetrack.ViewModels
         private ObservableCollection<EquipmentModel> _equipments = new();
         private EquipmentModel? _selectedEquipment;
         private string _searchText = string.Empty;
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public ObservableCollection<EquipmentModel> Equipments
@@ -32,12 +31,6 @@ namespace Firetrack.ViewModels
             set { _searchText = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -50,8 +43,7 @@ namespace Firetrack.ViewModels
         public ICommand EditEquipmentCommand { get; }
         public ICommand ViewHistoryCommand { get; }
         public ICommand ShowEquipmentDetailsCommand { get; }
-        public ICommand GoToAddEquipmentCommand { get; }   // <-- ADDED
-        public ICommand GoBackCommand { get; }
+        public ICommand GoToAddEquipmentCommand { get; }
 
         public InventoryViewModel()
         {
@@ -61,8 +53,7 @@ namespace Firetrack.ViewModels
             EditEquipmentCommand = new Command<EquipmentModel>(OnEditEquipment);
             ViewHistoryCommand = new Command<EquipmentModel>(OnViewHistory);
             ShowEquipmentDetailsCommand = new Command<EquipmentModel>(OnShowEquipmentDetails);
-            GoToAddEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("AddEquipmentPage"));   // <-- ADDED
-            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
+            GoToAddEquipmentCommand = new Command(async () => await Shell.Current.GoToAsync("AddEquipmentPage"));
 
             OnLoadEquipments();
         }
@@ -77,8 +68,6 @@ namespace Firetrack.ViewModels
             if (App.Database == null) return;
 
             IsBusy = true;
-            StatusMessage = string.Empty;
-
             try
             {
                 var all = await App.Database.GetEquipmentsAsync();
@@ -91,12 +80,10 @@ namespace Firetrack.ViewModels
                 Equipments.Clear();
                 foreach (var item in filtered)
                     Equipments.Add(item);
-
-                StatusMessage = $"📋 {Equipments.Count} equipment(s) found.";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error loading: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {
@@ -124,12 +111,12 @@ namespace Firetrack.ViewModels
             try
             {
                 await App.Database!.DeleteEquipmentAsync(equipment);
-                StatusMessage = $"✅ '{equipment.Name}' deleted successfully.";
+                await Shell.Current.DisplayAlert("Success", $"'{equipment.Name}' deleted successfully.", "OK");
                 await LoadEquipmentsAsync();
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error deleting: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
         }
 
@@ -137,7 +124,6 @@ namespace Firetrack.ViewModels
         {
             if (equipment == null) return;
 
-            // Show name prompt
             string newName = await Shell.Current.DisplayPromptAsync(
                 "Edit Equipment",
                 $"Current name: {equipment.Name}\nEnter new name:",
@@ -145,20 +131,13 @@ namespace Firetrack.ViewModels
                 "Cancel",
                 placeholder: equipment.Name);
 
-            // If user cancelled, skip the status selection
-            if (newName == null)
-            {
-                // User cancelled – do nothing
-                return;
-            }
+            if (newName == null) return;
 
-            // If user changed the name, update it
             if (!string.IsNullOrWhiteSpace(newName) && newName != equipment.Name)
             {
                 equipment.Name = newName.Trim();
             }
 
-            // Show status selection (only if not cancelled)
             string newStatus = await Shell.Current.DisplayActionSheet(
                 "Select Status",
                 "Cancel",
@@ -173,16 +152,15 @@ namespace Firetrack.ViewModels
                 equipment.Status = newStatus;
             }
 
-            // Save changes
             try
             {
                 await App.Database!.SaveEquipmentAsync(equipment);
-                StatusMessage = $"✅ Equipment updated.";
+                await Shell.Current.DisplayAlert("Success", "Equipment updated.", "OK");
                 await LoadEquipmentsAsync();
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error updating: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
         }
 
@@ -194,7 +172,6 @@ namespace Firetrack.ViewModels
             {
                 { "equipment", equipment }
             };
-            // Use relative navigation (no "//")
             await Shell.Current.GoToAsync("TransactionHistoryPage", navParams);
         }
 

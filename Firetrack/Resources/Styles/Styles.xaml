@@ -426,11 +426,10 @@
     </Style>
 
     <!-- ========================================================== -->
-    <!-- ========== CUSTOM KEYED STYLES (for our UI) ============= -->
+    <!-- ========== CUSTOM KEYED STYLES (High Contrast) =========== -->
     <!-- ========================================================== -->
 
-    <!-- Entry Style (without Padding and Margin – not supported in styles) -->
-    <!-- Entry Style (using new palette) -->
+    <!-- Entry Style -->
     <Style x:Key="EntryStyle" TargetType="Entry">
         <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
         <Setter Property="TextColor" Value="{StaticResource OnBackground}" />
@@ -478,7 +477,7 @@
         <Setter Property="FontAttributes" Value="Bold" />
     </Style>
 
-    <!-- Card Style (for Border) -->
+    <!-- Card Style -->
     <Style x:Key="CardStyle" TargetType="Border">
         <Setter Property="Stroke" Value="{StaticResource BorderColor}" />
         <Setter Property="StrokeThickness" Value="1" />

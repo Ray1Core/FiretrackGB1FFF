@@ -16,7 +16,6 @@ namespace Firetrack.ViewModels
         private string _photoPath = string.Empty;
         private ImageSource? _photoPreview;
         private bool _isBusy;
-        private string _statusMessage = string.Empty;
 
         public EquipmentModel Equipment
         {
@@ -46,12 +45,6 @@ namespace Firetrack.ViewModels
         {
             get => _isBusy;
             set { _isBusy = value; OnPropertyChanged(); }
-        }
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
         }
 
         public ICommand PickPhotoCommand { get; }
@@ -87,12 +80,11 @@ namespace Firetrack.ViewModels
                 {
                     PhotoPath = localPath;
                     PhotoPreview = ImageSource.FromFile(localPath);
-                    StatusMessage = "Photo selected successfully.";
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error picking photo: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", $"Error picking photo: {ex.Message}", "OK");
             }
             finally
             {
@@ -122,18 +114,17 @@ namespace Firetrack.ViewModels
         {
             if (string.IsNullOrWhiteSpace(PhotoPath))
             {
-                StatusMessage = "Please take or select a photo of the damage.";
+                await Shell.Current.DisplayAlert("Validation", "Please take or select a photo of the damage.", "OK");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Remarks))
             {
-                StatusMessage = "Please add remarks describing the damage.";
+                await Shell.Current.DisplayAlert("Validation", "Please add remarks describing the damage.", "OK");
                 return;
             }
 
             IsBusy = true;
-            StatusMessage = string.Empty;
 
             try
             {
@@ -155,21 +146,18 @@ namespace Firetrack.ViewModels
                 await _db.SaveEquipmentAsync(Equipment);
                 await _db.SaveTransactionAsync(transaction);
 
-                // ========== SEND NOTIFICATION TO ADMIN ==========
                 await _db.SendNotificationAsync(
                     "admin",
                     "⚠️ Damage Report",
                     $"{App.CurrentUser?.FullName} reported damage on '{Equipment.Name}'."
                 );
-                // ================================================
 
-                StatusMessage = "✅ Damage report submitted successfully!";
-                await Task.Delay(2000);
+                await Shell.Current.DisplayAlert("Success", "Damage report submitted successfully!", "OK");
                 await Shell.Current.GoToAsync("..");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error submitting report: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

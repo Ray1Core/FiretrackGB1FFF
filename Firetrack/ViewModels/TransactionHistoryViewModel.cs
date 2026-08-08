@@ -10,7 +10,6 @@ namespace Firetrack.ViewModels
     {
         private ObservableCollection<TransactionModel> _transactions = new();
         private EquipmentModel? _equipment;
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public ObservableCollection<TransactionModel> Transactions
@@ -25,12 +24,6 @@ namespace Firetrack.ViewModels
             set { _equipment = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -42,7 +35,7 @@ namespace Firetrack.ViewModels
         public TransactionHistoryViewModel(EquipmentModel equipment)
         {
             Equipment = equipment;
-            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync("..")); // go back to previous page
+            GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
             LoadTransactions();
         }
 
@@ -57,11 +50,10 @@ namespace Firetrack.ViewModels
                 Transactions.Clear();
                 foreach (var t in logs.OrderByDescending(t => t.Timestamp))
                     Transactions.Add(t);
-                StatusMessage = $"📋 {Transactions.Count} transaction(s) found.";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

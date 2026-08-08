@@ -13,7 +13,6 @@ namespace Firetrack.ViewModels
         private string _password = string.Empty;
         private string _fullName = string.Empty;
         private string _role = "Personnel";
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public string Username
@@ -42,12 +41,6 @@ namespace Firetrack.ViewModels
 
         public ObservableCollection<string> Roles { get; } = new() { "Admin", "Personnel" };
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -68,19 +61,18 @@ namespace Firetrack.ViewModels
         {
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(FullName))
             {
-                StatusMessage = "All fields are required.";
+                await Shell.Current.DisplayAlert("Validation", "All fields are required.", "OK");
                 return;
             }
 
             IsBusy = true;
-            StatusMessage = string.Empty;
 
             try
             {
                 var existing = await _db.GetUserByUsernameAsync(Username);
                 if (existing != null)
                 {
-                    StatusMessage = "❌ Username already exists.";
+                    await Shell.Current.DisplayAlert("Error", "Username already exists.", "OK");
                     IsBusy = false;
                     return;
                 }
@@ -95,7 +87,9 @@ namespace Firetrack.ViewModels
 
                 await _db.SaveUserAsync(newUser);
 
-                StatusMessage = $"✅ User '{newUser.Username}' created successfully!";
+                await Shell.Current.DisplayAlert("Success", $"User '{newUser.Username}' created successfully!", "OK");
+
+                // Clear fields
                 Username = string.Empty;
                 Password = string.Empty;
                 FullName = string.Empty;
@@ -103,7 +97,7 @@ namespace Firetrack.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

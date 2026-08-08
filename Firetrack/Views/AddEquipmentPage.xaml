@@ -23,7 +23,6 @@
             <!-- Form Card -->
             <Border Style="{StaticResource CardStyle}">
                 <VerticalStackLayout Spacing="16">
-                    <!-- QR Code -->
                     <Entry Style="{StaticResource EntryStyle}"
                            Placeholder="QR Code (e.g., HOSE005)"
                            Text="{Binding QRCode}"
@@ -31,7 +30,6 @@
                            PlaceholderColor="{StaticResource Gray300}"
                            BackgroundColor="{StaticResource Surface}" />
 
-                    <!-- Name -->
                     <Entry Style="{StaticResource EntryStyle}"
                            Placeholder="Equipment Name"
                            Text="{Binding Name}"
@@ -39,7 +37,6 @@
                            PlaceholderColor="{StaticResource Gray300}"
                            BackgroundColor="{StaticResource Surface}" />
 
-                    <!-- Type Picker -->
                     <Picker Title="Select Type"
                             ItemsSource="{Binding Types}"
                             SelectedItem="{Binding Type}"
@@ -47,19 +44,12 @@
                             TitleColor="{StaticResource Gray300}"
                             BackgroundColor="{StaticResource Surface}" />
 
-                    <!-- Status Picker -->
                     <Picker Title="Select Status"
                             ItemsSource="{Binding Statuses}"
                             SelectedItem="{Binding Status}"
                             TextColor="{StaticResource OnBackground}"
                             TitleColor="{StaticResource Gray300}"
                             BackgroundColor="{StaticResource Surface}" />
-
-                    <!-- Status Message -->
-                    <Label Text="{Binding StatusMessage}"
-                           TextColor="{Binding StatusMessage, Converter={StaticResource StringToColorConverter}}"
-                           HorizontalOptions="Center"
-                           FontSize="14" />
 
                     <!-- Buttons -->
                     <Button Text="Save Equipment"

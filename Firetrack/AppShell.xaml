@@ -4,12 +4,66 @@
        xmlns:views="clr-namespace:Firetrack.Views"
        x:Class="Firetrack.AppShell">
 
+    <!-- Login (entry point) -->
     <ShellContent Title="Login"
                   ContentTemplate="{DataTemplate views:LoginPage}"
                   Route="LoginPage" />
 
+    <!-- Dashboard (home after login) -->
     <ShellContent Title="Dashboard"
                   ContentTemplate="{DataTemplate views:DashboardPage}"
                   Route="DashboardPage" />
+
+    <!-- Admin pages -->
+    <ShellContent Title="Inventory"
+                  ContentTemplate="{DataTemplate views:InventoryPage}"
+                  Route="InventoryPage" />
+
+    <ShellContent Title="Transfer"
+                  ContentTemplate="{DataTemplate views:TransferPage}"
+                  Route="TransferPage" />
+
+    <ShellContent Title="Add User"
+                  ContentTemplate="{DataTemplate views:AddUserPage}"
+                  Route="AddUserPage" />
+
+    <ShellContent Title="Clearance"
+                  ContentTemplate="{DataTemplate views:ClearancePage}"
+                  Route="ClearancePage" />
+
+    <ShellContent Title="Add Equipment"
+                  ContentTemplate="{DataTemplate views:AddEquipmentPage}"
+                  Route="AddEquipmentPage" />
+
+    <!-- Personnel pages -->
+    <ShellContent Title="Request Equipment"
+                  ContentTemplate="{DataTemplate views:RequestEquipmentPage}"
+                  Route="RequestEquipmentPage" />
+
+    <ShellContent Title="Report Damage"
+                  ContentTemplate="{DataTemplate views:ReportDamagePage}"
+                  Route="ReportDamagePage" />
+
+    <!-- Shared pages -->
+    <ShellContent Title="ICS"
+                  ContentTemplate="{DataTemplate views:IcsPage}"
+                  Route="IcsPage" />
+
+    <ShellContent Title="Transaction History"
+                  ContentTemplate="{DataTemplate views:TransactionHistoryPage}"
+                  Route="TransactionHistoryPage" />
+
+    <ShellContent Title="Notifications"
+                  ContentTemplate="{DataTemplate views:NotificationsPage}"
+                  Route="NotificationsPage" />
+
+    <!-- Disabled pages (placeholders) -->
+    <ShellContent Title="Generate QR"
+                  ContentTemplate="{DataTemplate views:GenerateQRPage}"
+                  Route="GenerateQRPage" />
+
+    <ShellContent Title="Scanner"
+                  ContentTemplate="{DataTemplate views:ScannerPage}"
+                  Route="ScannerPage" />
 
 </Shell>

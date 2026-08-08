@@ -2,7 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Firetrack.Views.ReportDamagePage"
-             Title="Report Damage">
+             Title="Report Damage"
+             BackgroundColor="{StaticResource Background}">
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
@@ -67,17 +68,13 @@
                     <Editor Placeholder="Describe the damage..."
                             Text="{Binding Remarks}"
                             HeightRequest="100"
-                            BackgroundColor="White"
-                            TextColor="{StaticResource TextPrimaryColor}"
-                            PlaceholderColor="{StaticResource TextSecondaryColor}" />
+                            BackgroundColor="{StaticResource Surface}"
+                            TextColor="{StaticResource OnBackground}"
+                            PlaceholderColor="{StaticResource Gray300}" />
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Status Message -->
-            <Label Text="{Binding StatusMessage}"
-                   TextColor="{Binding StatusMessage, Converter={StaticResource StringToColorConverter}}"
-                   HorizontalOptions="Center"
-                   FontSize="14" />
+            <!-- StatusMessage Label REMOVED -->
 
             <!-- Buttons -->
             <Button Text="Submit Report"

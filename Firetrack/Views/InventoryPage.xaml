@@ -41,10 +41,7 @@
                         Command="{Binding SearchCommand}"
                         WidthRequest="100" />
             </Grid>
-            <Label Text="{Binding StatusMessage}"
-                   TextColor="{Binding StatusMessage, Converter={StaticResource StringToColorConverter}}"
-                   FontSize="14"
-                   HorizontalOptions="Center" />
+            <!-- StatusMessage Label REMOVED -->
         </VerticalStackLayout>
 
         <!-- Equipment List -->
@@ -124,13 +121,6 @@
             </CollectionView>
         </RefreshView>
 
-        <!-- Back Button -->
-        <Button Grid.Row="2"
-                Text="← Back to Dashboard"
-                Command="{Binding GoBackCommand}"
-                Style="{StaticResource SecondaryButton}"
-                VerticalOptions="End"
-                HorizontalOptions="Center"
-                Margin="0,0,0,20" />
+        
     </Grid>
 </ContentPage>

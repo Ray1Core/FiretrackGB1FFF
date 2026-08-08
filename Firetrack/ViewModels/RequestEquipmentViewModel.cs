@@ -10,7 +10,6 @@ namespace Firetrack.ViewModels
     {
         private ObservableCollection<EquipmentModel> _availableEquipment = new();
         private EquipmentModel? _selectedEquipment;
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public ObservableCollection<EquipmentModel> AvailableEquipment
@@ -25,12 +24,6 @@ namespace Firetrack.ViewModels
             set { _selectedEquipment = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -43,13 +36,12 @@ namespace Firetrack.ViewModels
 
         public RequestEquipmentViewModel()
         {
-            LoadAvailableCommand = new Command(async () => await OnLoadAvailable());   // <-- changed to async
+            LoadAvailableCommand = new Command(async () => await OnLoadAvailable());
             RequestCommand = new Command(OnRequest);
             GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
-            _ = OnLoadAvailable();   // fire-and-forget on startup
+            _ = OnLoadAvailable();
         }
 
-        // ===== CHANGED: async void → async Task =====
         private async Task OnLoadAvailable()
         {
             if (App.Database == null) return;
@@ -62,11 +54,10 @@ namespace Firetrack.ViewModels
                 AvailableEquipment.Clear();
                 foreach (var item in available)
                     AvailableEquipment.Add(item);
-                StatusMessage = $"📋 {AvailableEquipment.Count} available equipment(s).";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {
@@ -78,13 +69,13 @@ namespace Firetrack.ViewModels
         {
             if (SelectedEquipment == null)
             {
-                StatusMessage = "Please select an equipment first.";
+                await Shell.Current.DisplayAlert("Validation", "Please select an equipment first.", "OK");
                 return;
             }
 
             if (App.CurrentUser == null)
             {
-                StatusMessage = "You must be logged in.";
+                await Shell.Current.DisplayAlert("Error", "You must be logged in.", "OK");
                 return;
             }
 
@@ -117,21 +108,19 @@ namespace Firetrack.ViewModels
                 await App.Database!.SaveEquipmentAsync(equipment);
                 await App.Database!.SaveTransactionAsync(transaction);
 
-                // ========== SEND NOTIFICATION TO ADMIN ==========
                 await App.Database!.SendNotificationAsync(
                     "admin",
                     "📋 Equipment Request",
                     $"{App.CurrentUser?.FullName} requested '{equipment.Name}'."
                 );
-                // ================================================
 
-                StatusMessage = $"✅ {equipment.Name} assigned to you!";
+                await Shell.Current.DisplayAlert("Success", $"{equipment.Name} assigned to you!", "OK");
                 SelectedEquipment = null;
-                await OnLoadAvailable(); // now await works ✅
+                await OnLoadAvailable();
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {

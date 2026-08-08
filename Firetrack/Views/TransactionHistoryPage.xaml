@@ -2,7 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Firetrack.Views.TransactionHistoryPage"
-             Title="Transaction History">
+             Title="Transaction History"
+             BackgroundColor="{StaticResource Background}">
 
     <Grid RowDefinitions="Auto, *">
         <!-- Header -->
@@ -25,10 +26,7 @@
         <!-- List -->
         <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}">
             <VerticalStackLayout Padding="20" Spacing="15">
-                <Label Text="{Binding StatusMessage}"
-                       TextColor="{Binding StatusMessage, Converter={StaticResource StringToColorConverter}}"
-                       HorizontalOptions="Center"
-                       FontSize="14" />
+                <!-- StatusMessage Label REMOVED -->
 
                 <CollectionView ItemsSource="{Binding Transactions}" EmptyView="No transactions found.">
                     <CollectionView.ItemTemplate>
@@ -41,14 +39,16 @@
                                            TextColor="{Binding Action, Converter={StaticResource StringToColorConverter}}" />
                                     <Label Text="{Binding Timestamp, StringFormat='Date: {0:MMM dd, yyyy HH:mm}'}"
                                            FontSize="13"
-                                           TextColor="{StaticResource TextSecondaryColor}" />
+                                           TextColor="{StaticResource Gray300}" />
                                     <Label Text="{Binding FromUser, StringFormat='From: {0}'}"
-                                           FontSize="13" />
+                                           FontSize="13"
+                                           TextColor="{StaticResource OnBackground}" />
                                     <Label Text="{Binding ToUser, StringFormat='To: {0}'}"
-                                           FontSize="13" />
+                                           FontSize="13"
+                                           TextColor="{StaticResource OnBackground}" />
                                     <Label Text="{Binding Remarks, StringFormat='Remarks: {0}'}"
                                            FontSize="12"
-                                           TextColor="{StaticResource TextSecondaryColor}"
+                                           TextColor="{StaticResource Gray300}"
                                            IsVisible="{Binding Remarks, Converter={StaticResource IsNotNullConverter}}" />
                                 </VerticalStackLayout>
                             </Border>

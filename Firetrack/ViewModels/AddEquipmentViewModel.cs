@@ -13,7 +13,6 @@ namespace Firetrack.ViewModels
         private string _name = string.Empty;
         private string _type = string.Empty;
         private string _status = "Available";
-        private string _statusMessage = string.Empty;
         private bool _isBusy;
 
         public ObservableCollection<string> Types { get; } = new() { "Hose", "Nozzle", "Rescue Tool" };
@@ -43,12 +42,6 @@ namespace Firetrack.ViewModels
             set { _status = value; OnPropertyChanged(); }
         }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
         public bool IsBusy
         {
             get => _isBusy;
@@ -69,20 +62,18 @@ namespace Firetrack.ViewModels
         {
             if (string.IsNullOrWhiteSpace(QRCode) || string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Type))
             {
-                StatusMessage = "QR Code, Name, and Type are required.";
+                await Shell.Current.DisplayAlert("Validation", "QR Code, Name, and Type are required.", "OK");
                 return;
             }
 
             IsBusy = true;
-            StatusMessage = string.Empty;
 
             try
             {
-                // Check if QR code already exists
                 var existing = await _db.GetEquipmentByQRAsync(QRCode.Trim());
                 if (existing != null)
                 {
-                    StatusMessage = "❌ QR Code already exists.";
+                    await Shell.Current.DisplayAlert("Error", "QR Code already exists.", "OK");
                     IsBusy = false;
                     return;
                 }
@@ -99,21 +90,19 @@ namespace Firetrack.ViewModels
 
                 await _db.SaveEquipmentAsync(newEquipment);
 
-                StatusMessage = $"✅ Equipment '{newEquipment.Name}' added successfully!";
+                await Shell.Current.DisplayAlert("Success", $"Equipment '{newEquipment.Name}' added successfully!", "OK");
 
-                // Clear fields for next entry
+                // Clear fields
                 QRCode = string.Empty;
                 Name = string.Empty;
                 Type = string.Empty;
                 Status = "Available";
 
-                // Optionally navigate back after a delay
-                await Task.Delay(1500);
                 await Shell.Current.GoToAsync("..");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error: {ex.Message}";
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
             finally
             {
