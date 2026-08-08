@@ -86,14 +86,18 @@
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Common Button: Request Equipment -->
+            <!-- Common Buttons (visible to all users) -->
             <Button Text="📋 Request Equipment"
                     Command="{Binding GoToRequestEquipmentCommand}"
                     Style="{StaticResource PrimaryButton}" />
 
-            <!-- Action Buttons Grid -->
-            <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" ColumnSpacing="12" RowSpacing="12">
-                <!-- Row 1: Scan QR -->
+            <Button Text="👤 Profile"
+                    Command="{Binding GoToProfileCommand}"
+                    Style="{StaticResource PrimaryButton}" />
+
+            <!-- Action Buttons Grid (Admin only) -->
+            <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto" ColumnSpacing="12" RowSpacing="12">
+                <!-- Row 1: Scan QR (common) -->
                 <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="📷 Scan QR"
                         Command="{Binding GoToScannerCommand}"
@@ -113,7 +117,7 @@
 
                 <!-- Row 3: Admin Only -->
                 <Button Grid.Row="2" Grid.Column="0"
-                        Text="👥 Manage Users"
+                        Text="👤 Add User"
                         Command="{Binding GoToAddUserCommand}"
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
@@ -123,15 +127,20 @@
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 4: Admin Only -->
-                <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                <!-- Row 4: Admin Only (NEW) -->
+                <Button Grid.Row="3" Grid.Column="0"
+                        Text="👥 User Management"
+                        Command="{Binding GoToUserManagementCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        IsVisible="{Binding IsAdmin}" />
+                <Button Grid.Row="3" Grid.Column="1"
                         Text="📋 Inventory"
                         Command="{Binding GoToInventoryCommand}"
                         Style="{StaticResource PrimaryButton}"
                         IsVisible="{Binding IsAdmin}" />
 
-                <!-- Row 5: Logout -->
-                <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                <!-- Row 5: Logout (common) -->
+                <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
                         Text="🚪 Logout"
                         Command="{Binding LogoutCommand}"
                         Style="{StaticResource DangerButton}" />

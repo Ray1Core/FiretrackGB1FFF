@@ -21,7 +21,7 @@ namespace Firetrack.Services
             connection.Open();
 
             // ===== CREATE TABLES IF MISSING =====
-            // Users
+            // Users (with IsActive)
             connection.Execute(@"
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
                 CREATE TABLE Users (
@@ -29,8 +29,17 @@ namespace Firetrack.Services
                     Username NVARCHAR(50) UNIQUE NOT NULL,
                     Password NVARCHAR(100) NOT NULL,
                     FullName NVARCHAR(100) NOT NULL,
-                    Role NVARCHAR(20) NOT NULL DEFAULT 'Personnel'
+                    Role NVARCHAR(20) NOT NULL DEFAULT 'Personnel',
+                    IsActive BIT NOT NULL DEFAULT 1
                 )");
+
+            // Add IsActive if missing (migration)
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                               WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'IsActive')
+                BEGIN
+                    ALTER TABLE Users ADD IsActive BIT NOT NULL DEFAULT 1;
+                END");
 
             // Equipment
             connection.Execute(@"
@@ -78,8 +87,8 @@ namespace Firetrack.Services
             if (admin == null)
             {
                 connection.Execute(
-                    "INSERT INTO Users (Username, Password, FullName, Role) VALUES (@Username, @Password, @FullName, @Role)",
-                    new { Username = "admin", Password = "admin123", FullName = "Admin Chief", Role = "Admin" });
+                    "INSERT INTO Users (Username, Password, FullName, Role, IsActive) VALUES (@Username, @Password, @FullName, @Role, @IsActive)",
+                    new { Username = "admin", Password = "admin123", FullName = "Admin Chief", Role = "Admin", IsActive = true });
             }
 
             var user = connection.QueryFirstOrDefault<UserModel>(
@@ -87,8 +96,8 @@ namespace Firetrack.Services
             if (user == null)
             {
                 connection.Execute(
-                    "INSERT INTO Users (Username, Password, FullName, Role) VALUES (@Username, @Password, @FullName, @Role)",
-                    new { Username = "user", Password = "user123", FullName = "John Firefighter", Role = "Personnel" });
+                    "INSERT INTO Users (Username, Password, FullName, Role, IsActive) VALUES (@Username, @Password, @FullName, @Role, @IsActive)",
+                    new { Username = "user", Password = "user123", FullName = "John Firefighter", Role = "Personnel", IsActive = true });
             }
 
             // ===== SEED EQUIPMENT =====
@@ -192,11 +201,11 @@ namespace Firetrack.Services
             using var connection = new SqlConnection(_connectionString);
             string sql = @"
                 IF EXISTS (SELECT 1 FROM Users WHERE UserId = @UserId)
-                    UPDATE Users SET Username = @Username, Password = @Password, FullName = @FullName, Role = @Role
+                    UPDATE Users SET Username = @Username, Password = @Password, FullName = @FullName, Role = @Role, IsActive = @IsActive
                     WHERE UserId = @UserId
                 ELSE
-                    INSERT INTO Users (Username, Password, FullName, Role)
-                    VALUES (@Username, @Password, @FullName, @Role);
+                    INSERT INTO Users (Username, Password, FullName, Role, IsActive)
+                    VALUES (@Username, @Password, @FullName, @Role, @IsActive);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
             return await connection.ExecuteScalarAsync<int>(sql, user);
         }
@@ -207,6 +216,27 @@ namespace Firetrack.Services
             var result = await connection.QueryAsync<UserModel>("SELECT * FROM Users");
             return result.ToList();
         }
+
+        // ===== NEW METHODS =====
+        public async Task<int> UpdateUserAsync(UserModel user)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = @"
+                UPDATE Users 
+                SET Username = @Username, Password = @Password, FullName = @FullName, 
+                    Role = @Role, IsActive = @IsActive
+                WHERE UserId = @UserId";
+            return await connection.ExecuteAsync(sql, user);
+        }
+
+        public async Task<bool> ResetPasswordAsync(string username, string newPassword)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            string sql = "UPDATE Users SET Password = @Password WHERE Username = @Username";
+            int rows = await connection.ExecuteAsync(sql, new { Password = newPassword, Username = username });
+            return rows > 0;
+        }
+        // =====================
 
         public async Task<EquipmentModel?> GetEquipmentByQRAsync(string qrCode)
         {
