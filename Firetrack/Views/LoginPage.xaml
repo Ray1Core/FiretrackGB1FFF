@@ -22,14 +22,14 @@
                    TextColor="{StaticResource OnBackground}"
                    HorizontalOptions="Center" />
 
-            <!-- Subtitle – now lighter -->
+            <!-- Subtitle -->
             <Label Text="QR Inventory &amp; Asset Accountability"
                    FontSize="14"
                    TextColor="{StaticResource Gray300}"
                    HorizontalOptions="Center"
                    Margin="0,0,0,20" />
 
-            <!-- Username field with rounded border -->
+            <!-- Username -->
             <Border Stroke="{StaticResource BorderColor}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 10"
@@ -43,7 +43,7 @@
                        BackgroundColor="Transparent" />
             </Border>
 
-            <!-- Password field with rounded border -->
+            <!-- Password -->
             <Border Stroke="{StaticResource BorderColor}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 10"
@@ -73,6 +73,14 @@
                     HeightRequest="50"
                     FontAttributes="Bold"
                     FontSize="16" />
+
+            <!-- Forgot Password link -->
+            <Button Text="Forgot Password?"
+                    Command="{Binding GoToForgotPasswordCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Gray300}"
+                    FontSize="14"
+                    HorizontalOptions="Center" />
 
             <ActivityIndicator IsRunning="{Binding IsBusy}"
                                Color="{StaticResource OnBackground}"

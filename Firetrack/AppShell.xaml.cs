@@ -12,6 +12,7 @@ public partial class AppShell : Shell
         // Routes are already defined in XAML, but we keep them here too.
         // This ensures compatibility with our GoToAsync calls.
         Routing.RegisterRoute("LoginPage", typeof(LoginPage));
+        Routing.RegisterRoute("ForgotPasswordPage", typeof(Views.ForgotPasswordPage));
         Routing.RegisterRoute("DashboardPage", typeof(DashboardPage));
         Routing.RegisterRoute("InventoryPage", typeof(InventoryPage));
         Routing.RegisterRoute("TransferPage", typeof(TransferPage));

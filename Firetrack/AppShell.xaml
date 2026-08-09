@@ -9,6 +9,10 @@
                   ContentTemplate="{DataTemplate views:LoginPage}"
                   Route="LoginPage" />
 
+    <ShellContent Title="ForgotPassword"
+              ContentTemplate="{DataTemplate views:ForgotPasswordPage}"
+              Route="ForgotPasswordPage" />
+
     <!-- Dashboard (home after login) -->
     <ShellContent Title="Dashboard"
                   ContentTemplate="{DataTemplate views:DashboardPage}"

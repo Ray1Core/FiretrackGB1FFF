@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using Microsoft.Data.SqlClient;
 using Dapper;
 using Firetrack.Models;
@@ -42,7 +43,7 @@ namespace Firetrack.Services
                     ALTER TABLE Users ADD IsActive BIT NOT NULL DEFAULT 1;
                 END");
 
-            // Equipment (with new request columns)
+            // Equipment (with request columns)
             connection.Execute(@"
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Equipment' AND xtype='U')
                 CREATE TABLE Equipment (
@@ -73,6 +74,26 @@ namespace Firetrack.Services
                                WHERE TABLE_NAME = 'Equipment' AND COLUMN_NAME = 'RequestStatus')
                 BEGIN
                     ALTER TABLE Equipment ADD RequestStatus NVARCHAR(20) NULL;
+                END");
+
+            // PasswordResetOtps
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PasswordResetOtps' AND xtype='U')
+                CREATE TABLE PasswordResetOtps (
+                    Id INT IDENTITY(1,1) PRIMARY KEY,
+                    Username NVARCHAR(50) NOT NULL,
+                    OtpCode NVARCHAR(6) NOT NULL,
+                    Expiry DATETIME NOT NULL,
+                    IsUsed BIT NOT NULL DEFAULT 0,
+                    CONSTRAINT FK_PasswordResetOtps_Users FOREIGN KEY (Username)
+                        REFERENCES Users(Username) ON DELETE CASCADE
+                )");
+
+            // Add index if missing
+            connection.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_PasswordResetOtps_Username' AND object_id = OBJECT_ID('PasswordResetOtps'))
+                BEGIN
+                    CREATE INDEX IX_PasswordResetOtps_Username ON PasswordResetOtps(Username);
                 END");
 
             // Transactions
@@ -239,7 +260,7 @@ namespace Firetrack.Services
             return result.ToList();
         }
 
-        // ===== NEW USER MANAGEMENT METHODS =====
+        // ===== USER MANAGEMENT METHODS =====
         public async Task<int> UpdateUserAsync(UserModel user)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -258,7 +279,50 @@ namespace Firetrack.Services
             int rows = await connection.ExecuteAsync(sql, new { Password = newPassword, Username = username });
             return rows > 0;
         }
-        // ==============================
+
+        // ===== OTP / PASSWORD RESET METHODS =====
+        public async Task<string> GenerateOtpAsync(string username)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            // Delete old OTPs for this user
+            await connection.ExecuteAsync(
+                "DELETE FROM PasswordResetOtps WHERE Username = @Username OR Expiry < GETDATE()",
+                new { Username = username });
+
+            // Generate 6-digit OTP
+            var random = new Random();
+            string otpCode = random.Next(100000, 999999).ToString();
+
+            // Insert new OTP
+            var expiry = DateTime.Now.AddMinutes(10);
+            await connection.ExecuteAsync(
+                @"INSERT INTO PasswordResetOtps (Username, OtpCode, Expiry, IsUsed)
+                  VALUES (@Username, @OtpCode, @Expiry, 0)",
+                new { Username = username, OtpCode = otpCode, Expiry = expiry });
+
+            return otpCode;
+        }
+
+        public async Task<bool> ValidateOtpAsync(string username, string otpCode)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var result = await connection.QueryFirstOrDefaultAsync<OtpModel>(
+                @"SELECT * FROM PasswordResetOtps 
+                  WHERE Username = @Username AND OtpCode = @OtpCode AND IsUsed = 0 AND Expiry > GETDATE()",
+                new { Username = username, OtpCode = otpCode });
+
+            return result != null;
+        }
+
+        public async Task MarkOtpUsedAsync(string username, string otpCode)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.ExecuteAsync(
+                "UPDATE PasswordResetOtps SET IsUsed = 1 WHERE Username = @Username AND OtpCode = @OtpCode",
+                new { Username = username, OtpCode = otpCode });
+        }
+        // ===========================
 
         // ===== REQUEST METHODS =====
         public async Task<List<EquipmentModel>> GetPendingRequestsAsync()

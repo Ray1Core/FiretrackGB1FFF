@@ -38,10 +38,13 @@ namespace Firetrack.ViewModels
         }
 
         public ICommand LoginCommand { get; }
+        public ICommand GoToForgotPasswordCommand { get; }
 
         public LoginViewModel()
         {
             LoginCommand = new Command(OnLogin);
+            GoToForgotPasswordCommand = new Command(async () =>
+                await Shell.Current.GoToAsync("ForgotPasswordPage"));
         }
 
         private async void OnLogin()

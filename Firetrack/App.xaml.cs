@@ -16,7 +16,6 @@ namespace Firetrack
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            // Use this connection string (alternative)
             string connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=FiretrackDB;Integrated Security=True;";
 
             Database = new DatabaseService(connectionString);
